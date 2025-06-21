@@ -364,11 +364,11 @@
     // history.forEach((r, i) => {
     //     body += `#${i + 1}\t사용자: ${r.user}\t날짜: ${r.date}\t내역: ${r.desc}\t프로젝트: ${r.pro}\t금액: ${r.amount}원\n`;
     // });
-    let body = 'No.,날짜,사용자,프로젝트,내역,금액\n';
+    let body = 'No.,날짜,사용자,프로젝트,내역,금액\r\n';
     history.forEach((r, i) => {
       // body += `#${i + 1}\t사용자: ${r.user}\t날짜: ${r.date}\t내역: ${r.desc}\t프로젝트: ${r.pro}\t금액: ${r.amount}원\n`;
       const amount = r.amount.toString().replace(/,/g, ''); // 쉼표 제거
-      body += `#${i + 1},${r.date},${r.user},${r.pro},${r.desc},${amount}\n`;
+      body += `#${i + 1},${r.date},${r.user},${r.pro},${r.desc},${amount}\r\n`;
     });
     const to = 'dw.jung@iksrnd.com';
     const subject = encodeURIComponent(`법인카드내역(${user})`);
