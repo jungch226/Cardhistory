@@ -49,27 +49,28 @@
       <label for="pro" class="form-label">프로젝트</label>
       <input type="text" id="pro" class="form-control" placeholder="예: 순천 POSCO 형상 모니터링" required>
     </div>
-    <div class="mb-3">
+    <!-- <div class="mb-3">
       <label for="amount" class="form-label">금액</label>
       <input type="text" id="amount" class="form-control" placeholder="예: 45,000" min="1" required>
-    </div>
+    </div> -->
     <div class="mb-3">
       <label for="date" class="form-label">날짜</label>
       <input type="date" id="date" class="form-control" required>
     </div>
     <div class="mb-3">
       <label for="photoFile" class="form-label">사진 </label>
-      <input type="file" id="photoFile" accept="image/*" capture="environment" class="form-control" onchange="previewImage(event)" >
+      <!-- <input type="file" id="photoFile" accept="image/*" capture="environment" class="form-control" onchange="previewImage(event)" required > -->
+      <input type="file" id="photoFile" accept="image/*" class="form-control" onchange="previewImage(event)" required >
       <div id="previewBox">
         <span id="previewText">이미지 미리보기</span>
         <img id="preview" alt="미리보기">
       </div>
     </div>
-    <div class="mb-3">
+    <!-- <div class="mb-3">
     <label for="phototext" class="form-label">사진에서 인식된 텍스트 (OCR 결과)</label>
       <textarea id="phototext" class="form-control" rows="3" placeholder="OCR 결과가 여기에 표시됩니다."></textarea>
-    </div>
-    <div class="mb-3">
+    </div> -->
+    <!-- <div class="mb-3">
       <div class="d-flex gap-3">
         <div class="form-check">
           <input class="form-check-input" type="radio" name="ocrOption" id="ocrYes" value="YES" required>
@@ -80,10 +81,10 @@
           <label class="form-check-label" for="ocrNo">OCR 미첨부</label>
         </div>
       </div>
-    </div>
+    </div> -->
     <div class="d-grid gap-2">
       <button class="btn btn-success" type="submit">내역 추가</button>
-      <button class="btn btn-primary" type="button" onclick="exportPDF()">PDF 저장</button>
+      <!-- <button class="btn btn-primary" type="button" onclick="exportPDF()">PDF 저장</button> -->
       <button class="btn btn-secondary" type="button" onclick="sendAllMail()">메일 전송</button>
       <button class="btn btn-danger" type="button" onclick="clearHistory()">히스토리 초기화</button>
     </div>
@@ -96,26 +97,26 @@
 <script>
   let db;
   let base64ImageData = "";
-  const amountInput = document.getElementById('amount');
+//   const amountInput = document.getElementById('amount');
 
-  amountInput.addEventListener('input', function (e) {
-    const input = e.target;
+//   amountInput.addEventListener('input', function (e) {
+//     const input = e.target;
 
-    // 숫자만 남기기
-    let raw = input.value.replace(/[^0-9]/g, '');
+//     // 숫자만 남기기
+//     let raw = input.value.replace(/[^0-9]/g, '');
 
-    // 빈값이면 빈 문자열
-    if (!raw) {
-      input.value = '';
-      return;
-    }
+//     // 빈값이면 빈 문자열
+//     if (!raw) {
+//       input.value = '';
+//       return;
+//     }
 
-    // 천 단위 콤마 붙이기
-    input.value = Number(raw).toLocaleString();
+//     // 천 단위 콤마 붙이기
+//     input.value = Number(raw).toLocaleString();
 
-    // 커서 위치는 간단히 맨 뒤로 이동
-    input.selectionStart = input.selectionEnd = input.value.length;
-  });
+//     // 커서 위치는 간단히 맨 뒤로 이동
+//     input.selectionStart = input.selectionEnd = input.value.length;
+//   });
   function saveSelectedUser() {
     const user = document.getElementById('user').value;
     localStorage.setItem('selectedUser', user);
@@ -148,31 +149,31 @@
       return;
     }
 
-    const phototext = document.getElementById('phototext');
-    phototext.textContent = "인식 중...";
+    // const phototext = document.getElementById('phototext');
+    // phototext.textContent = "인식 중...";
 
-    try {
-      const worker = await Tesseract.createWorker("kor");
-      const { data: { text } } = await worker.recognize(base64ImageData);
-      await worker.terminate();
+    // try {
+    //   const worker = await Tesseract.createWorker("kor");
+    //   const { data: { text } } = await worker.recognize(base64ImageData);
+    //   await worker.terminate();
 
-      // 줄바꿈 자동 삽입 (예: 마침표, 콜론, 중점, 하이픈 등 뒤에 줄바꿈)
-      let cleaned = text
-        .replace(/\s+/g, ' ')                      // 여러 공백을 하나로
-        .replace(/([.:·-])\s*/g, '$1\n')           // 기호 뒤에 줄바꿈
-        .trim();
+    //   // 줄바꿈 자동 삽입 (예: 마침표, 콜론, 중점, 하이픈 등 뒤에 줄바꿈)
+    //   let cleaned = text
+    //     .replace(/\s+/g, ' ')                      // 여러 공백을 하나로
+    //     .replace(/([.:·-])\s*/g, '$1\n')           // 기호 뒤에 줄바꿈
+    //     .trim();
 
-      // 최대 길이 제한
-      const MAX_LENGTH = 500;
-      if (cleaned.length > MAX_LENGTH) {
-        cleaned = cleaned.slice(0, MAX_LENGTH) + '...';
-      }
+    //   // 최대 길이 제한
+    //   const MAX_LENGTH = 500;
+    //   if (cleaned.length > MAX_LENGTH) {
+    //     cleaned = cleaned.slice(0, MAX_LENGTH) + '...';
+    //   }
 
-      phototext.textContent = cleaned || "인식 실패";
-    } catch (err) {
-      console.error("OCR 오류:", err);
-      phototext.textContent = "인식 실패";
-    }
+    //   phototext.textContent = cleaned || "인식 실패";
+    // } catch (err) {
+    //   console.error("OCR 오류:", err);
+    //   phototext.textContent = "인식 실패";
+    // }
   }
   // function previewImage(e) {
   //   const file = e.target.files[0];
@@ -248,18 +249,25 @@
     const user = document.getElementById('user').value;
     const desc = document.getElementById('desc').value;
     const pro = document.getElementById('pro').value;
-    const amount = document.getElementById('amount').value;
+    // const amount = document.getElementById('amount').value;
     const date = document.getElementById('date').value;
-    const includeOCR = document.getElementById("ocrYes").checked;  
-    const ocrNo = document.getElementById("ocrNo").checked;  
-    const phototext  = document.getElementById('phototext').value;
-    if (!user || !desc || !pro || !amount || !date)
-        return alert("모든 항목을 입력해주세요");
 
-    const record = { user, desc, pro, amount, date, photo: base64ImageData || "" 
-      ,ocrText: document.getElementById('phototext').value || ""
+    localStorage.setItem('wdesc', desc);
+    localStorage.setItem('wpro', pro);
+
+    // const includeOCR = document.getElementById("ocrYes").checked;  
+    // const ocrNo = document.getElementById("ocrNo").checked;  
+    // const phototext  = document.getElementById('phototext').value;
+    // if (!user || !desc || !pro || !amount || !date)
+    // if (!user || !desc || !pro  || !date)
+    //     return alert("모든 항목을 입력해주세요");
+    
+    // const record = { user, desc, pro, date, photo: base64ImageData || "" 
+    //   ,ocrText: document.getElementById('phototext').value || ""
+    // };
+    const record = { user, desc, pro, date, photo: base64ImageData || "" 
+      
     };
-
     const tx = db.transaction('cards', 'readwrite');
     const store = tx.objectStore('cards');
     store.add(record);
@@ -269,8 +277,10 @@
       document.getElementById('cardForm').reset();
       document.getElementById('user').value = user;
       document.getElementById('date').value = date;
-      document.getElementById("ocrYes").checked = includeOCR;
-      document.getElementById("ocrNo").checked = ocrNo;  
+      document.getElementById('desc').value = desc;
+      document.getElementById('pro').value = pro;
+    //   document.getElementById("ocrYes").checked = includeOCR;
+    //   document.getElementById("ocrNo").checked = ocrNo;  
 
       base64ImageData = "";
 
@@ -281,7 +291,7 @@
       previewText.style.display = 'block';
 
       // OCR 텍스트 초기화 (div일 경우)
-      document.getElementById('phototext').textContent = '';
+    //   document.getElementById('phototext').textContent = '';
 
       renderHistory();
     };
@@ -304,25 +314,31 @@
 
     try {
       const history = await getAllRecords();
-      const includeOCR = document.getElementById("ocrYes").checked;  
+    //   const includeOCR = document.getElementById("ocrYes").checked;  
       history.forEach((r) => {
         const wrapper = document.createElement('div');
         wrapper.className = 'border p-2 mb-2 d-flex justify-content-between align-items-center';
-        
+         
         const left = document.createElement('div');
-        const ocrLine = includeOCR
-        ? `명세서 내용(OCR): ${r.ocrText||'없음'}<br>`
-        : '명세서 내용(OCR): 미첨부';
+        // const ocrLine = includeOCR
+        // ? `명세서 내용(OCR): ${r.ocrText||'없음'}<br>`
+        // : '명세서 내용(OCR): 미첨부';
 
+        // left.innerHTML = `
+        //   <b>${r.user}</b> (${r.date})<br>
+        //   내역: ${r.desc}<br>
+        //   프로젝트: ${r.pro}<br>
+        //   금액: ${r.amount}원<br>
+        //   ${ocrLine}<br>
+        //   <img src="${r.photo}" style="max-width:100px; max-height:80px; margin-top:5px;">
+        // `;
         left.innerHTML = `
           <b>${r.user}</b> (${r.date})<br>
           내역: ${r.desc}<br>
           프로젝트: ${r.pro}<br>
-          금액: ${r.amount}원<br>
-          ${ocrLine}<br>
           <img src="${r.photo}" style="max-width:100px; max-height:80px; margin-top:5px;">
         `;
-
+       
         const delBtn = document.createElement('button');
         delBtn.className = 'btn btn-sm btn-danger ms-2';
         delBtn.textContent = '삭제';
@@ -356,6 +372,8 @@
   }
 
   async function sendAllMail() {
+    exportPDF();
+
     const user = document.getElementById('user').value;
     const history = await getAllRecords();
     if (history.length === 0) return alert("저장된 내역이 없습니다.");
@@ -418,7 +436,7 @@
     const dateStr = `${yyyy}-${mm}-${dd}`;
 
     doc.save(`법인카드내역_${dateStr}.pdf`);
-    alert("저장완료 되었습니다.");
+    alert(`법인카드내역_${dateStr}.pdf 저장되었습니다. 첨부는 직접 해주세요!!`);
   }
 
   window.onload = async () => {
@@ -426,6 +444,11 @@
 
     const savedUser = localStorage.getItem('selectedUser');
     const userSelect = document.getElementById('user');
+    const wdesc = localStorage.getItem('wdesc');
+    const wpro = localStorage.getItem('wpro');
+
+    // document.getElementById('desc') = localStorage.getItem('wdesc');
+    // document.getElementById('wpro') = localStorage.getItem('wpro');
 
     if (savedUser && [...userSelect.options].some(opt => opt.value === savedUser)) {
       userSelect.value = savedUser;
@@ -433,6 +456,21 @@
     else {
       userSelect.value = '';
     }
+    if (wdesc) {
+      document.getElementById('desc').value = wdesc;
+    } 
+    else {
+      document.getElementById('desc').value = '';
+    }
+    if (wpro) {
+      document.getElementById('pro').value = wpro;
+    } 
+    else {
+      document.getElementById('pro').value = '';
+    }
+
+
+
     const today = new Date();
     const yyyy = today.getFullYear();
     const mm = String(today.getMonth() + 1).padStart(2, '0');
@@ -442,7 +480,7 @@
 
     renderHistory();
   };
-  document.getElementById("ocrYes").checked  = true;
+//   document.getElementById("ocrYes").checked  = true;
 </script>
 </body>
 </html>
