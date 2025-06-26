@@ -487,7 +487,7 @@
     const dd = String(today.getDate()).padStart(2, '0');
     const dateStr = `${yyyy}-${mm}-${dd}`;
 
-    doc.save(`법인카드내역_${dateStr}.pdf`);
+    await doc.save(`법인카드내역_${dateStr}.pdf`);
     alert(`법인카드내역_${dateStr}.pdf 저장되었습니다. 첨부는 직접 해주세요!!`);
   }
 
