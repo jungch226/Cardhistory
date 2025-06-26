@@ -58,15 +58,10 @@
       <input type="date" id="date" class="form-control" required>
     </div>
     <div class="mb-3">
-      <label for="photoFile" class="form-label">사진?? </label>
+      <label for="photoFile" class="form-label">사진 test </label>
       <!-- <input type="file" id="photoFile" accept="image/*" capture="environment" class="form-control" onchange="previewImage(event)" required > -->
-      <input 
-        type="file" 
-        accept="image/*" 
-        class="form-control" 
-        onchange="previewImage(event)" 
-        required
-        >
+      <input   type="file"   id="galleryInput"  accept="image/*"   class="form-control mb-2"   onchange="previewImage(event)"   required >
+      <input   type="file"   id="cameraInput"   accept="image/*"   capture="environment"   class="form-control"   onchange="previewImage(event)">
       <div id="previewBox">
         <span id="previewText">이미지 미리보기</span>
         <img id="preview" alt="미리보기">
