@@ -8,6 +8,8 @@
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.1/dist/tesseract.min.js"></script>
+  <script src="https://unpkg.com/jspdf@2.5.1/dist/polyfills.umd.min.js"></script>
+
 
   <style>
     #previewBox {
@@ -575,6 +577,10 @@
         const history = await getAllRecords();
         if (history.length === 0) return alert("저장된 내역이 없습니다.");
         const { jsPDF } = window.jspdf;
+        jsPDF.API.events.push(['addFonts', function () {
+            this.addFileToVFS("NanumGothic.ttf", "<BASE64_FONT_DATA>");
+            this.addFont("NanumGothic.ttf", "NanumGothic", "normal");
+        }]);
         const doc = new jsPDF();
 
         const pageWidth = doc.internal.pageSize.getWidth();
