@@ -6,21 +6,12 @@
   <title>법인카드 내역</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
   <style>
-    #previewBox {
-      width: 100%; max-width: 300px; height: 180px;
-      border: 2px dashed #ced4da; border-radius: 8px;
-      display: flex; justify-content: center; align-items: center;
-      background-color: #f8f9fa; color: #6c757d;
-      overflow: hidden; margin-top: 0.5rem;
-    }
-    #previewBox img {
-      max-width: 100%; max-height: 100%; object-fit: contain;
-      border-radius: 6px; display: none;
-    }
+    #previewBox { width:100%; max-width:300px; height:180px; border:2px dashed #ced4da;
+      border-radius:8px; display:flex; justify-content:center; align-items:center;
+      background:#f8f9fa; color:#6c757d; overflow:hidden; margin-top:0.5rem; }
+    #previewBox img { max-width:100%; max-height:100%; object-fit:contain; display:none; border-radius:6px; }
   </style>
 </head>
 <body class="bg-light">
@@ -28,156 +19,81 @@
   <h2 class="text-center mb-4">법인카드 내역</h2>
   <form id="cardForm" onsubmit="event.preventDefault(); addRecord();" class="mx-auto" style="max-width:480px;">
     <div class="mb-3">
-      <label for="user" class="form-label">사용자</label>
-      <select id="user" class="form-select" required onchange="saveSelectedUser()">
+      <label class="form-label">사용자</label>
+      <select id="user" class="form-select" required>
         <option value="">선택하세요</option>
         <option>김동혁</option><option>신경용</option><option>정재원</option>
         <option>이주홍</option><option>정채호</option><option>김현재</option>
         <option>조성원</option><option>문성인</option><option>현혜영</option><option>변지호</option>
       </select>
     </div>
+    <div class="mb-3"><label class="form-label">내역</label><input type="text" id="desc" class="form-control" required></div>
+    <div class="mb-3"><label class="form-label">프로젝트</label><input type="text" id="pro" class="form-control" required></div>
+    <div class="mb-3"><label class="form-label">날짜</label><input type="date" id="date" class="form-control" required></div>
     <div class="mb-3">
-      <label for="desc" class="form-label">내역</label>
-      <input type="text" id="desc" class="form-control" required>
-    </div>
-    <div class="mb-3">
-      <label for="pro" class="form-label">프로젝트</label>
-      <input type="text" id="pro" class="form-control" required>
-    </div>
-    <div class="mb-3">
-      <label for="date" class="form-label">날짜</label>
-      <input type="date" id="date" class="form-control" required>
-    </div>
-    <div class="mb-3">
-      <button type="button" class="btn btn-primary" onclick="showChoice()">사진 업로드</button>
-      <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none" onchange="previewImage(event)">
-      <input type="file" id="galleryInput" accept="image/*" style="display:none" onchange="previewImage(event)">
-      <div id="previewBox" class="mt-2">
-        <span id="previewText">이미지 미리보기</span>
-        <img id="preview" alt="미리보기">
-      </div>
+      <button type="button" class="btn btn-primary" onclick="document.getElementById('photo').click()">사진 업로드</button>
+      <input type="file" id="photo" accept="image/*" style="display:none" onchange="previewImage(event)">
+      <div id="previewBox" class="mt-2"><span id="previewText">이미지 미리보기</span><img id="preview"></div>
     </div>
     <div class="d-grid gap-2">
       <button class="btn btn-success" type="submit">내역 추가</button>
       <button class="btn btn-secondary" type="button" onclick="shareZip()">ZIP 공유</button>
-      <button class="btn btn-danger" type="button" onclick="clearHistory()">히스토리 초기화</button>
     </div>
   </form>
   <hr/>
   <div id="historyList" class="mt-3" style="max-width:480px; margin:0 auto;"></div>
 </div>
-
 <script>
-let db, base64ImageData = "";
-function saveSelectedUser() {
-  localStorage.setItem('selectedUser', user.value);
-}
-function openDB() {
-  return new Promise((res, rej) => {
-    const rq = indexedDB.open('CardDB', 1);
-    rq.onerror = () => rej('DB 오류');
-    rq.onsuccess = e => { db = e.target.result; res(); };
-    rq.onupgradeneeded = e => {
-      db = e.target.result;
-      if (!db.objectStoreNames.contains('cards'))
-        db.createObjectStore('cards', { keyPath: 'id', autoIncrement: true });
-    };
-  });
-}
-function showChoice() {
-  confirm("카메라 촬영?") ? cameraInput.click() : galleryInput.click();
-}
+let records = [], photoData = "";
 function previewImage(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    preview.src = ev.target.result;
-    preview.style.display = 'block';
-    previewText.style.display = 'none';
-    base64ImageData = ev.target.result;
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    photoData = ev.target.result;
+    preview.src = photoData;
+    preview.style.display = 'block'; previewText.style.display = 'none';
   };
-  reader.readAsDataURL(file);
+  r.readAsDataURL(f);
 }
-async function addRecord() {
-  const rec = { user: user.value, desc: desc.value, pro: pro.value, date: date.value, photo: base64ImageData };
-  if (!rec.user || !rec.desc || !rec.pro || !rec.date) return alert("모두 입력해주세요");
-  const tx = db.transaction('cards', 'readwrite');
-  tx.objectStore('cards').add(rec);
-  tx.oncomplete = () => {
-    cardForm.reset(); preview.style.display = 'none'; previewText.style.display = 'block'; base64ImageData = ""; renderHistory();
-  };
-  tx.onerror = () => alert("저장 실패");
+function addRecord() {
+  const user = user.value, desc = desc.value, pro = pro.value, date = date.value;
+  if (!user || !desc || !pro || !date) return alert("모든 항목을 입력하세요.");
+  records.push({ user, desc, pro, date, photo: photoData });
+  preview.src = ""; preview.style.display = "none"; previewText.style.display = "block";
+  cardForm.reset(); renderHistory();
 }
-function getAllRecords() {
-  return new Promise((res, rej) => {
-    const tx = db.transaction('cards', 'readonly'), rq = tx.objectStore('cards').getAll();
-    rq.onsuccess = () => res(rq.result);
-    rq.onerror = () => rej('조회 실패');
-  });
-}
-async function renderHistory() {
-  const list = historyList; list.innerHTML = "";
-  const history = await getAllRecords();
-  history.forEach(r => {
-    const w = document.createElement('div');
-    w.className = "border p-2 mb-2 d-flex justify-content-between";
-    const left = document.createElement('div');
-    const img = r.photo ? `<img src="${r.photo}" style="max-width:100px;max-height:80px;margin-top:5px;">` : "";
-    left.innerHTML = `<b>${r.user}</b> (${r.date})<br>내역: ${r.desc}<br>프로젝트: ${r.pro}<br>${img}`;
-    const btn = document.createElement('button');
-    btn.className = "btn btn-sm btn-danger";
-    btn.textContent = "삭제";
-    btn.onclick = () => deleteRecord(r.id);
-    w.append(left, btn);
-    list.appendChild(w);
-  });
-}
-function deleteRecord(id) {
-  if (!confirm("삭제하시겠습니까?")) return;
-  const tx = db.transaction('cards', 'readwrite');
-  tx.objectStore('cards').delete(id);
-  tx.oncomplete = renderHistory;
-  tx.onerror = () => alert("삭제 실패");
-}
-async function clearHistory() {
-  if (!confirm("모두 삭제하시겠습니까?")) return;
-  const tx = db.transaction('cards', 'readwrite');
-  tx.objectStore('cards').clear();
-  tx.oncomplete = renderHistory;
-  tx.onerror = () => alert("초기화 실패");
+function renderHistory() {
+  historyList.innerHTML = records.map((r, i) => `
+    <div class='border p-2 mb-2'><b>${r.user}</b> (${r.date})<br>${r.desc}<br>${r.pro}</div>`).join("");
 }
 async function shareZip() {
-  const { jsPDF } = window.jspdf;
-  const history = await getAllRecords();
-  if (!history.length) return alert("내역 없음");
-
-  const txt = history.map(r => `사용자: ${r.user}\n날짜: ${r.date}\n내역: ${r.desc}\n프로젝트: ${r.pro}\n`).join("\n-------------------\n\n");
-  const txtFile = new File([txt], "법인카드내역.txt", { type: "text/plain" });
-
-  const canvas = await html2canvas(historyList, { scale: 2 });
-  const imgData = canvas.toDataURL("image/jpeg", 1.0);
-  const pdf = new jsPDF();
-  const pdfWidth = pdf.internal.pageSize.getWidth();
-  const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-  pdf.addImage(imgData, "JPEG", 0, 0, pdfWidth, pdfHeight);
-  const pdfBlob = pdf.output("blob");
-  const pdfFile = new File([pdfBlob], "법인카드내역.pdf", { type: "application/pdf" });
-
+  if (!records.length) return alert("내역이 없습니다.");
   const zip = new JSZip();
-  zip.file(txtFile.name, txtFile);
-  zip.file(pdfFile.name, pdfFile);
-  const zipBlob = await zip.generateAsync({ type: "blob" });
-  const now = new Date();
-  const zipName = `법인카드내역_${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}.zip`;
-  saveAs(zipBlob, zipName);
+  const txt = records.map(r => `사용자: ${r.user}\n날짜: ${r.date}\n내역: ${r.desc}\n프로젝트: ${r.pro}\n`).join("\n");
+  zip.file("cards.txt", txt);
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF();
+  let y = 10;
+  for (let r of records) {
+    if (r.photo) try {
+      pdf.addImage(r.photo, 'JPEG', 10, y, 90, 60);
+      y += 70; if (y > 270) { pdf.addPage(); y = 10; }
+    } catch {}
+  }
+  const pdfBlob = pdf.output("blob");
+  zip.file("photos.pdf", pdfBlob);
+  const blob = await zip.generateAsync({ type: "blob" });
+  const zipFile = new File([blob], "카드내역_" + new Date().toISOString().slice(0,10) + ".zip", { type: "application/zip" });
+  if (navigator.canShare && navigator.canShare({ files: [zipFile] })) {
+    try { await navigator.share({ files: [zipFile], title: "법인카드 ZIP" }); }
+    catch { alert("공유 취소됨"); }
+  } else {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = zipFile.name;
+    a.click();
+  }
 }
-window.onload = async () => {
-  await openDB();
-  if (localStorage.selectedUser) user.value = localStorage.selectedUser;
-  date.value = new Date().toISOString().split("T")[0];
-  renderHistory();
-};
 </script>
 </body>
 </html>
