@@ -60,7 +60,13 @@
     <div class="mb-3">
       <label for="photoFile" class="form-label">사진 </label>
       <!-- <input type="file" id="photoFile" accept="image/*" capture="environment" class="form-control" onchange="previewImage(event)" required > -->
-      <input type="file" id="photoFile" accept="image/*" class="form-control" onchange="previewImage(event)" required >
+      <input 
+        type="file" 
+        accept="image/*" 
+        class="form-control" 
+        onchange="previewImage(event)" 
+        required
+        >
       <div id="previewBox">
         <span id="previewText">이미지 미리보기</span>
         <img id="preview" alt="미리보기">
