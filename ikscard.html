@@ -77,9 +77,9 @@
             onchange="previewImage(event)"
         >
 
-      <div id="previewBox">
-        <span id="previewText">이미지 미리보기</span>
-        <img id="preview" alt="미리보기">
+      <div id="previewBox" class="mt-2">
+        <span id="previewText">이미지 미리보기</span><br>
+        <img id="preview" alt="미리보기" style="max-width: 100%; height: auto; display: none;">
       </div>
     </div>
     <!-- <div class="mb-3">
@@ -269,6 +269,18 @@
     }
   }
 
+//   function previewImage(event) {
+//     const file = event.target.files[0];
+//     if (file) {
+//       const reader = new FileReader();
+//       reader.onload = function(e) {
+//         const img = document.getElementById('preview');
+//         img.src = e.target.result;
+//         document.getElementById('previewText').style.display = 'none';
+//       };
+//       reader.readAsDataURL(file);
+//     }
+//   }
   function previewImage(event) {
     const file = event.target.files[0];
     if (file) {
@@ -276,7 +288,9 @@
       reader.onload = function(e) {
         const img = document.getElementById('preview');
         img.src = e.target.result;
+        img.style.display = 'block';
         document.getElementById('previewText').style.display = 'none';
+        base64ImageData = e.target.result;  // base64로 저장
       };
       reader.readAsDataURL(file);
     }
