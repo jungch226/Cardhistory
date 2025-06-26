@@ -3,220 +3,181 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>법인카드 내역 공유 (PDF + TXT + ZIP)</title>
+  <title>법인카드 내역</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/fflate@0.7.4/umd/index.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
   <style>
-    body { background: #f8f9fa; }
-    .container { max-width: 600px; margin-top: 2rem; }
-    #historyList > div { border: 1px solid #dee2e6; padding: 0.75rem; margin-bottom: 0.5rem; border-radius: 0.25rem; background: white;}
+    #previewBox {
+      width: 100%; max-width: 300px; height: 180px;
+      border: 2px dashed #ced4da; border-radius: 8px;
+      display: flex; justify-content: center; align-items: center;
+      background-color: #f8f9fa; color: #6c757d;
+      overflow: hidden; margin-top: 0.5rem;
+    }
+    #previewBox img {
+      max-width: 100%; max-height: 100%; object-fit: contain;
+      border-radius: 6px; display: none;
+    }
   </style>
 </head>
-<body>
-<div class="container">
-  <h2 class="mb-4 text-center">법인카드 내역 추가 및 공유</h2>
-
-  <form id="cardForm" class="mb-3">
-    <div class="mb-2">
+<body class="bg-light">
+<div class="container py-4">
+  <h2 class="text-center mb-4">법인카드 내역</h2>
+  <form id="cardForm" onsubmit="event.preventDefault(); addRecord();" class="mx-auto" style="max-width:480px;">
+    <div class="mb-3">
       <label for="user" class="form-label">사용자</label>
-      <select id="user" class="form-select" required>
+      <select id="user" class="form-select" required onchange="saveSelectedUser()">
         <option value="">선택하세요</option>
         <option>김동혁</option><option>신경용</option><option>정재원</option>
         <option>이주홍</option><option>정채호</option><option>김현재</option>
-        <option>조성원</option><option>문성인</option><option>현혜영</option>
-        <option>변지호</option>
+        <option>조성원</option><option>문성인</option><option>현혜영</option><option>변지호</option>
       </select>
     </div>
-    <div class="mb-2">
+    <div class="mb-3">
       <label for="desc" class="form-label">내역</label>
-      <input type="text" id="desc" class="form-control" placeholder="예: 식비(정채호)" required />
+      <input type="text" id="desc" class="form-control" required>
     </div>
-    <div class="mb-2">
+    <div class="mb-3">
       <label for="pro" class="form-label">프로젝트</label>
-      <input type="text" id="pro" class="form-control" placeholder="예: 순천 POSCO 형상 모니터링" required />
+      <input type="text" id="pro" class="form-control" required>
     </div>
-    <div class="mb-2">
+    <div class="mb-3">
       <label for="date" class="form-label">날짜</label>
-      <input type="date" id="date" class="form-control" required />
+      <input type="date" id="date" class="form-control" required>
     </div>
-    <button type="submit" class="btn btn-success w-100">내역 추가</button>
+    <div class="mb-3">
+      <button type="button" class="btn btn-primary" onclick="showChoice()">사진 업로드</button>
+      <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none" onchange="previewImage(event)">
+      <input type="file" id="galleryInput" accept="image/*" style="display:none" onchange="previewImage(event)">
+      <div id="previewBox" class="mt-2">
+        <span id="previewText">이미지 미리보기</span>
+        <img id="preview" alt="미리보기">
+      </div>
+    </div>
+    <div class="d-grid gap-2">
+      <button class="btn btn-success" type="submit">내역 추가</button>
+      <button class="btn btn-secondary" type="button" onclick="shareZip()">ZIP 공유</button>
+      <button class="btn btn-danger" type="button" onclick="clearHistory()">히스토리 초기화</button>
+    </div>
   </form>
-
-  <div id="historyList" class="mb-3"></div>
-
-  <button id="btnShare" class="btn btn-primary w-100" disabled>내역 PDF + TXT ZIP으로 공유하기</button>
+  <hr/>
+  <div id="historyList" class="mt-3" style="max-width:480px; margin:0 auto;"></div>
 </div>
 
 <script>
-(() => {
+let db, base64ImageData = "";
+function saveSelectedUser() {
+  localStorage.setItem('selectedUser', user.value);
+}
+function openDB() {
+  return new Promise((res, rej) => {
+    const rq = indexedDB.open('CardDB', 1);
+    rq.onerror = () => rej('DB 오류');
+    rq.onsuccess = e => { db = e.target.result; res(); };
+    rq.onupgradeneeded = e => {
+      db = e.target.result;
+      if (!db.objectStoreNames.contains('cards'))
+        db.createObjectStore('cards', { keyPath: 'id', autoIncrement: true });
+    };
+  });
+}
+function showChoice() {
+  confirm("카메라 촬영?") ? cameraInput.click() : galleryInput.click();
+}
+function previewImage(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    preview.src = ev.target.result;
+    preview.style.display = 'block';
+    previewText.style.display = 'none';
+    base64ImageData = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+async function addRecord() {
+  const rec = { user: user.value, desc: desc.value, pro: pro.value, date: date.value, photo: base64ImageData };
+  if (!rec.user || !rec.desc || !rec.pro || !rec.date) return alert("모두 입력해주세요");
+  const tx = db.transaction('cards', 'readwrite');
+  tx.objectStore('cards').add(rec);
+  tx.oncomplete = () => {
+    cardForm.reset(); preview.style.display = 'none'; previewText.style.display = 'block'; base64ImageData = ""; renderHistory();
+  };
+  tx.onerror = () => alert("저장 실패");
+}
+function getAllRecords() {
+  return new Promise((res, rej) => {
+    const tx = db.transaction('cards', 'readonly'), rq = tx.objectStore('cards').getAll();
+    rq.onsuccess = () => res(rq.result);
+    rq.onerror = () => rej('조회 실패');
+  });
+}
+async function renderHistory() {
+  const list = historyList; list.innerHTML = "";
+  const history = await getAllRecords();
+  history.forEach(r => {
+    const w = document.createElement('div');
+    w.className = "border p-2 mb-2 d-flex justify-content-between";
+    const left = document.createElement('div');
+    const img = r.photo ? `<img src="${r.photo}" style="max-width:100px;max-height:80px;margin-top:5px;">` : "";
+    left.innerHTML = `<b>${r.user}</b> (${r.date})<br>내역: ${r.desc}<br>프로젝트: ${r.pro}<br>${img}`;
+    const btn = document.createElement('button');
+    btn.className = "btn btn-sm btn-danger";
+    btn.textContent = "삭제";
+    btn.onclick = () => deleteRecord(r.id);
+    w.append(left, btn);
+    list.appendChild(w);
+  });
+}
+function deleteRecord(id) {
+  if (!confirm("삭제하시겠습니까?")) return;
+  const tx = db.transaction('cards', 'readwrite');
+  tx.objectStore('cards').delete(id);
+  tx.oncomplete = renderHistory;
+  tx.onerror = () => alert("삭제 실패");
+}
+async function clearHistory() {
+  if (!confirm("모두 삭제하시겠습니까?")) return;
+  const tx = db.transaction('cards', 'readwrite');
+  tx.objectStore('cards').clear();
+  tx.oncomplete = renderHistory;
+  tx.onerror = () => alert("초기화 실패");
+}
+async function shareZip() {
   const { jsPDF } = window.jspdf;
-  const fflate = window.fflate;
+  const history = await getAllRecords();
+  if (!history.length) return alert("내역 없음");
 
-  let records = [];
+  const txt = history.map(r => `사용자: ${r.user}\n날짜: ${r.date}\n내역: ${r.desc}\n프로젝트: ${r.pro}\n`).join("\n-------------------\n\n");
+  const txtFile = new File([txt], "법인카드내역.txt", { type: "text/plain" });
 
-  const userEl = document.getElementById('user');
-  const descEl = document.getElementById('desc');
-  const proEl = document.getElementById('pro');
-  const dateEl = document.getElementById('date');
-  const form = document.getElementById('cardForm');
-  const historyList = document.getElementById('historyList');
-  const btnShare = document.getElementById('btnShare');
+  const canvas = await html2canvas(historyList, { scale: 2 });
+  const imgData = canvas.toDataURL("image/jpeg", 1.0);
+  const pdf = new jsPDF();
+  const pdfWidth = pdf.internal.pageSize.getWidth();
+  const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+  pdf.addImage(imgData, "JPEG", 0, 0, pdfWidth, pdfHeight);
+  const pdfBlob = pdf.output("blob");
+  const pdfFile = new File([pdfBlob], "법인카드내역.pdf", { type: "application/pdf" });
 
-  // 날짜 기본 오늘
-  dateEl.value = new Date().toISOString().slice(0,10);
-
-  form.addEventListener('submit', e => {
-    e.preventDefault();
-    addRecord();
-  });
-
-  function addRecord() {
-    const user = userEl.value.trim();
-    const desc = descEl.value.trim();
-    const pro = proEl.value.trim();
-    const date = dateEl.value;
-
-    if (!user || !desc || !pro || !date) {
-      alert('모든 항목을 입력해주세요.');
-      return;
-    }
-
-    records.push({ user, desc, pro, date });
-    renderHistory();
-    form.reset();
-    dateEl.value = new Date().toISOString().slice(0,10);
-    btnShare.disabled = false;
-  }
-
-  function renderHistory() {
-    historyList.innerHTML = '';
-    records.forEach((r, i) => {
-      const div = document.createElement('div');
-      div.innerHTML = `<b>${r.user}</b> (${r.date})<br>내역: ${r.desc}<br>프로젝트: ${r.pro}
-        <button class="btn btn-sm btn-danger mt-1">삭제</button>`;
-      const btnDel = div.querySelector('button');
-      btnDel.onclick = () => {
-        records.splice(i,1);
-        renderHistory();
-        if(records.length === 0) btnShare.disabled = true;
-      };
-      historyList.appendChild(div);
-    });
-  }
-
-  // PDF 생성
-  function createPDF(records) {
-    const doc = new jsPDF();
-    const ph = doc.internal.pageSize.getHeight();
-    let y = 10;
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(12);
-    records.forEach(r => {
-      const lines = [
-        `사용자: ${r.user}`,
-        `날짜: ${r.date}`,
-        `내역: ${r.desc}`,
-        `프로젝트: ${r.pro}`,
-        '-----------------------------'
-      ];
-      lines.forEach(line => {
-        if (y > ph - 20) {
-          doc.addPage();
-          y = 10;
-        }
-        doc.text(line, 10, y);
-        y += 10;
-      });
-    });
-    return doc.output('blob');
-  }
-
-  // TXT 생성
-  function createTXT(records) {
-    let txt = '';
-    records.forEach(r => {
-      txt += `사용자: ${r.user}\r\n날짜: ${r.date}\r\n내역: ${r.desc}\r\n프로젝트: ${r.pro}\r\n-----------------------------\r\n`;
-    });
-    return new Blob([txt], { type: 'text/plain;charset=utf-8' });
-  }
-
-  // ZIP 생성 (Promise 반환)
-  function createZIP(pdfBlob, txtBlob) {
-    return new Promise((resolve) => {
-      const zip = new fflate.Zip();
-      zip.add('법인카드내역.pdf', new Uint8Array(pdfBlob.arrayBuffer ? pdfBlob.arrayBuffer() : pdfBlob), { level: 9 });
-      zip.add('법인카드내역.txt', new Uint8Array(txtBlob.arrayBuffer ? txtBlob.arrayBuffer() : txtBlob));
-      zip.end((err, data) => {
-        if (err) {
-          alert('ZIP 압축 중 오류가 발생했습니다.');
-          resolve(null);
-        } else {
-          resolve(new Blob([data], { type: 'application/zip' }));
-        }
-      });
-    });
-  }
-
-  // 파일 공유
-  async function shareFiles(zipBlob) {
-    const now = new Date();
-    const fn = `법인카드내역_${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}.zip`;
-    const file = new File([zipBlob], fn, { type: 'application/zip' });
-
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      try {
-        await navigator.share({ files: [file], title: '법인카드 내역 공유' });
-      } catch (e) {
-        alert('공유가 취소되었거나 실패했습니다.');
-      }
-    } else {
-      // 공유 불가 시 다운로드 처리
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(file);
-      a.download = fn;
-      a.click();
-      alert(`${fn} 파일이 다운로드되었습니다. 이메일 등으로 첨부하여 공유하세요.`);
-    }
-  }
-
-  btnShare.addEventListener('click', async () => {
-    if (records.length === 0) {
-      alert('내역이 없습니다.');
-      return;
-    }
-    btnShare.disabled = true;
-    btnShare.textContent = '준비 중...';
-
-    const pdfBlob = createPDF(records);
-    const txtBlob = createTXT(records);
-
-    // fflate는 Uint8Array 입력 필요하므로 변환
-    const pdfArrayBuffer = await pdfBlob.arrayBuffer();
-    const txtArrayBuffer = await txtBlob.arrayBuffer();
-
-    // ZIP 생성
-    const zipBlob = await new Promise(resolve => {
-      const zip = new fflate.Zip();
-      zip.add('법인카드내역.pdf', new Uint8Array(pdfArrayBuffer), { level: 9 });
-      zip.add('법인카드내역.txt', new Uint8Array(txtArrayBuffer));
-      zip.end((err, data) => {
-        if (err) {
-          alert('ZIP 압축 중 오류가 발생했습니다.');
-          resolve(null);
-        } else {
-          resolve(new Blob([data], { type: 'application/zip' }));
-        }
-      });
-    });
-
-    if (zipBlob) {
-      await shareFiles(zipBlob);
-    }
-    btnShare.textContent = '내역 PDF + TXT ZIP으로 공유하기';
-    btnShare.disabled = false;
-  });
-})();
+  const zip = new JSZip();
+  zip.file(txtFile.name, txtFile);
+  zip.file(pdfFile.name, pdfFile);
+  const zipBlob = await zip.generateAsync({ type: "blob" });
+  const now = new Date();
+  const zipName = `법인카드내역_${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}.zip`;
+  saveAs(zipBlob, zipName);
+}
+window.onload = async () => {
+  await openDB();
+  if (localStorage.selectedUser) user.value = localStorage.selectedUser;
+  date.value = new Date().toISOString().split("T")[0];
+  renderHistory();
+};
 </script>
 </body>
 </html>
