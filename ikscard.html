@@ -181,41 +181,35 @@ async function sendAllMail() {
 }
 
 async function exportPDF() {
-  const history = await getAllRecords();
-  if(history.length===0){ alert("내역이 없습니다."); return; }
+  const el = document.getElementById("historyList");
+  if (!el || el.innerHTML.trim() === "") {
+    alert("내역이 없습니다.");
+    return;
+  }
+
+  const canvas = await html2canvas(el, { scale: 2 });
+  const imgData = canvas.toDataURL("image/jpeg", 1.0);
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  const pw = doc.internal.pageSize.getWidth(),
-        ph = doc.internal.pageSize.getHeight();
-  let y=10;
+  const pdf = new jsPDF("p", "mm", "a4");
 
-  history.forEach(r=>{
-    if(r.photo){
-      try{ doc.addImage(r.photo, 'JPEG', 10, y, 90, 60); }
-      catch{}
+  const pdfWidth = pdf.internal.pageSize.getWidth();
+  const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+  pdf.addImage(imgData, "JPEG", 0, 0, pdfWidth, pdfHeight);
+
+  const now = new Date();
+  const filename = `법인카드내역_${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}.pdf`;
+  const blob = pdf.output("blob");
+  const file = new File([blob], filename, { type: "application/pdf" });
+
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], title: "법인카드 내역" });
+    } catch {
+      alert("공유 실패");
     }
-    y += 64;
-    doc.setFontSize(10);
-    [`사용자: ${r.user}`, `날짜: ${r.date}`, `내역: ${r.desc}`, `프로젝트: ${r.pro}`]
-      .forEach(line=>{
-        if(y+6>ph-10){ doc.addPage(); y=10; }
-        doc.text(line, 10, y); y+=6;
-      });
-    y+=10;
-    if(y+60>ph-10){ doc.addPage(); y=10; }
-  });
-
-  const now=new Date();
-  const fn = `법인카드내역_${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}.pdf`;
-  const blob = doc.output("blob");
-  const file = new File([blob], fn, { type: "application/pdf" });
-
-  if(navigator.canShare && navigator.canShare({ files: [file] })) {
-    try{ await navigator.share({ files:[file], title:"법인카드 내역" }); }
-    catch{ alert("공유 실패"); }
   } else {
-    doc.save(fn);
-    alert(`${fn} 저장되었습니다. 이메일에 첨부해주세요.`);
+    pdf.save(filename);
+    alert(`${filename} 저장되었습니다. 이메일에 첨부해주세요.`);
   }
 }
 
