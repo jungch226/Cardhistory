@@ -422,28 +422,46 @@
     tx.onerror = () => alert('초기화 실패');
   }
 
-  async function sendAllMail() {
-    exportPDF();
+//   async function sendAllMail() {
+//     await exportPDF();
 
-    const user = document.getElementById('user').value;
+//     const user = document.getElementById('user').value;
+//     const history = await getAllRecords();
+//     if (history.length === 0) return alert("저장된 내역이 없습니다.");
+
+//     // let body = ``;
+//     // history.forEach((r, i) => {
+//     //     body += `#${i + 1}\t사용자: ${r.user}\t날짜: ${r.date}\t내역: ${r.desc}\t프로젝트: ${r.pro}\t금액: ${r.amount}원\n`;
+//     // });
+//     let body = 'No.,날짜,사용자,프로젝트,내역,금액\r\n';
+//     history.forEach((r, i) => {
+//       // body += `#${i + 1}\t사용자: ${r.user}\t날짜: ${r.date}\t내역: ${r.desc}\t프로젝트: ${r.pro}\t금액: ${r.amount}원\n`;
+//     //   const amount = r.amount.toString().replace(/,/g, ''); // 쉼표 제거
+//     //   body += `#${i + 1},${r.date},${r.user},${r.pro},${r.desc},${amount}\r\n`;
+//       body += `#${i + 1},${r.date},${r.user},${r.pro},${r.desc}\r\n`;
+//     });
+//     const to = 'dw.jung@iksrnd.com';
+//     const subject = encodeURIComponent(`법인카드내역(${user})`);
+//     const bodyEncoded = encodeURIComponent(body);
+//     location.href = `mailto:${to}?subject=${subject}&body=${bodyEncoded}`;
+//   }
+  async function sendAllMail() {
     const history = await getAllRecords();
     if (history.length === 0) return alert("저장된 내역이 없습니다.");
 
-    // let body = ``;
-    // history.forEach((r, i) => {
-    //     body += `#${i + 1}\t사용자: ${r.user}\t날짜: ${r.date}\t내역: ${r.desc}\t프로젝트: ${r.pro}\t금액: ${r.amount}원\n`;
-    // });
-    let body = 'No.,날짜,사용자,프로젝트,내역,금액\r\n';
+    let body = 'No.,날짜,사용자,프로젝트,내역\r\n';
     history.forEach((r, i) => {
-      // body += `#${i + 1}\t사용자: ${r.user}\t날짜: ${r.date}\t내역: ${r.desc}\t프로젝트: ${r.pro}\t금액: ${r.amount}원\n`;
-    //   const amount = r.amount.toString().replace(/,/g, ''); // 쉼표 제거
-    //   body += `#${i + 1},${r.date},${r.user},${r.pro},${r.desc},${amount}\r\n`;
-      body += `#${i + 1},${r.date},${r.user},${r.pro},${r.desc}\r\n`;
+        body += `#${i + 1},${r.date},${r.user},${r.pro},${r.desc}\r\n`;
     });
-    const to = 'dw.jung@iksrnd.com';
-    const subject = encodeURIComponent(`법인카드내역(${user})`);
-    const bodyEncoded = encodeURIComponent(body);
-    location.href = `mailto:${to}?subject=${subject}&body=${bodyEncoded}`;
+
+    // 본문 내용을 복사할 수 있게 클립보드에 저장 (선택 사항)
+    try {
+        await navigator.clipboard.writeText(body);
+        alert("내역 내용이 클립보드에 복사되었습니다. 이메일에 붙여넣기 해주세요.");
+    } catch {
+        alert("클립보드 복사 권한이 없거나 지원하지 않는 브라우저입니다. 수동으로 복사해주세요.");
+    }
+    await exportPDF();
   }
 
 //   async function exportPDF() {
@@ -543,7 +561,7 @@ async function exportPDF() {
         title: "법인카드 내역",
         text: "PDF 파일을 저장하거나 공유하세요."
       });
-      alert(`${fileName} 공유가 완료되었습니다. 첨부는 직접 해주세요!!`);
+      alert(`${fileName} 공유가 완료되었습니다.`);
     } catch (err) {
       alert("공유가 취소되었거나 실패했습니다.");
     }
