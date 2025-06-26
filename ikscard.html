@@ -58,10 +58,15 @@
       <input type="date" id="date" class="form-control" required>
     </div>
     <div class="mb-3">
-      <label for="photoFile" class="form-label">사진 test </label>
-      <!-- <input type="file" id="photoFile" accept="image/*" capture="environment" class="form-control" onchange="previewImage(event)" required > -->
-      <input   type="file"   id="galleryInput"  accept="image/*"   class="form-control mb-2"   onchange="previewImage(event)"   required >
-      <input   type="file"   id="cameraInput"   accept="image/*"   capture="environment"   class="form-control"   onchange="previewImage(event)">
+      <label for="photoFile" class="form-label">사진 업로드</label>
+      <input 
+            type="file" 
+            id="photoFile" 
+            accept="image/*"
+            class="form-control" 
+            onchange="previewImage(event)" 
+            required
+        >
       <div id="previewBox">
         <span id="previewText">이미지 미리보기</span>
         <img id="preview" alt="미리보기">
@@ -216,34 +221,47 @@
   //   };
   //   reader.readAsDataURL(file);
   // }
-  function previewImage(e) {
-    const file = e.target.files[0];
-    const preview = document.getElementById('preview');
-    const previewText = document.getElementById('previewText');
-    if (!file) return;
+//   function previewImage(e) {
+//     const file = e.target.files[0];
+//     const preview = document.getElementById('preview');
+//     const previewText = document.getElementById('previewText');
+//     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = function(evt) {
-      const img = new Image();
-      img.onload = async () => {
-        const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 800;
-        const scale = Math.min(MAX_WIDTH / img.width, 1);
-        canvas.width = img.width * scale;
-        canvas.height = img.height * scale;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        base64ImageData = canvas.toDataURL('image/jpeg', 0.8);
-        preview.src = base64ImageData;
-        preview.style.display = 'block';
-        previewText.style.display = 'none';
+//     const reader = new FileReader();
+//     reader.onload = function(evt) {
+//       const img = new Image();
+//       img.onload = async () => {
+//         const canvas = document.createElement('canvas');
+//         const MAX_WIDTH = 800;
+//         const scale = Math.min(MAX_WIDTH / img.width, 1);
+//         canvas.width = img.width * scale;
+//         canvas.height = img.height * scale;
+//         const ctx = canvas.getContext('2d');
+//         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+//         base64ImageData = canvas.toDataURL('image/jpeg', 0.8);
+//         preview.src = base64ImageData;
+//         preview.style.display = 'block';
+//         previewText.style.display = 'none';
 
-        // ✅ 이미지 처리 후 OCR 자동 실행
-        await runOCR();
+//         // ✅ 이미지 처리 후 OCR 자동 실행
+//         // await runOCR();
+//       };
+//       img.src = evt.target.result;
+//     };
+//     reader.readAsDataURL(file);
+//   }
+
+  function previewImage(event) {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = document.getElementById('preview');
+        img.src = e.target.result;
+        document.getElementById('previewText').style.display = 'none';
       };
-      img.src = evt.target.result;
-    };
-    reader.readAsDataURL(file);
+      reader.readAsDataURL(file);
+    }
   }
 
   async function addRecord() {
