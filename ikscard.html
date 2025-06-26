@@ -58,15 +58,25 @@
       <input type="date" id="date" class="form-control" required>
     </div>
     <div class="mb-3">
-      <label for="photoFile" class="form-label">사진 업로드</label>
-      <input 
+      <button type="button" class="btn btn-primary" onclick="showChoice()">사진 업로드</button>
+
+        <input 
             type="file" 
-            id="photoFile" 
-            accept="image/*"
-            class="form-control" 
-            onchange="previewImage(event)" 
-            required
+            id="cameraInput" 
+            accept="image/*" 
+            capture="environment" 
+            style="display: none;" 
+            onchange="previewImage(event)"
         >
+
+        <input 
+            type="file" 
+            id="galleryInput" 
+            accept="image/*" 
+            style="display: none;" 
+            onchange="previewImage(event)"
+        >
+
       <div id="previewBox">
         <span id="previewText">이미지 미리보기</span>
         <img id="preview" alt="미리보기">
@@ -250,6 +260,14 @@
 //     };
 //     reader.readAsDataURL(file);
 //   }
+ function showChoice() {
+    const choice = confirm("카메라로 촬영하시겠습니까?\n취소를 누르면 앨범에서 선택합니다.");
+    if (choice) {
+      document.getElementById('cameraInput').click(); // 카메라
+    } else {
+      document.getElementById('galleryInput').click(); // 앨범
+    }
+  }
 
   function previewImage(event) {
     const file = event.target.files[0];
