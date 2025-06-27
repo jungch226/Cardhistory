@@ -34,6 +34,7 @@
         <option value="정재원">정재원</option>
         <option value="이주홍">이주홍</option>
         <option value="정채호">정채호</option>
+        <option value="김현재">김현재</option>
         <option value="조성원">조성원</option>
         <option value="문성인">문성인</option>
         <option value="현혜영">현혜영</option>
@@ -444,95 +445,224 @@
 //     const bodyEncoded = encodeURIComponent(body);
 //     location.href = `mailto:${to}?subject=${subject}&body=${bodyEncoded}`;
 //   }
+  function createTextImage(textLines, width = 300, fontSize = 12, lineHeight = 18, padding = 10) {
+    const canvas = document.createElement("canvas");
+    const height = padding * 2 + lineHeight * textLines.length;
+    canvas.width = width;
+    canvas.height = height;
+
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, width, height);
+    ctx.fillStyle = "#000";
+    ctx.font = `${fontSize}px sans-serif`;
+
+    textLines.forEach((line, index) => {
+      ctx.fillText(line, padding, padding + lineHeight * (index + 1) - 5);
+    });
+
+    return canvas.toDataURL("image/png");
+  }
+
+  // async function sendAllMail() {
+  //   const history = await getAllRecords();
+  //   if (history.length === 0) return alert("저장된 내역이 없습니다.");
+
+  //   // ✅ CSV 생성
+  //   let csvContent = 'No.,날짜,사용자,프로젝트,내역\r\n';
+  //   history.forEach((r, i) => {
+  //     const row = [
+  //       i + 1,
+  //       r.date,
+  //       `"${r.user}"`,
+  //       `"${r.pro}"`,
+  //       `"${r.desc}"`
+  //     ].join(',');
+  //     csvContent += row + '\r\n';
+  //   });
+
+  //   const today = new Date();
+  //   const yyyy = today.getFullYear();
+  //   const mm = String(today.getMonth() + 1).padStart(2, '0');
+  //   const dd = String(today.getDate()).padStart(2, '0');
+  //   const dateStr = `${yyyy}-${mm}-${dd}`;
+
+  //   const csvFileName = `법인카드내역_${dateStr}.csv`;
+  //   const utf8Bom = '\uFEFF';
+  //   const csvBlob = new Blob([utf8Bom + csvContent], { type: "text/csv;charset=utf-8" });
+  //   const csvFile = new File([csvBlob], csvFileName, { type: "text/csv" });
+
+  //   // ✅ PDF (사진만 포함)
+  //   const { jsPDF } = window.jspdf;
+  //   const doc = new jsPDF();
+  //   const pageWidth = doc.internal.pageSize.getWidth();
+  //   const pageHeight = doc.internal.pageSize.getHeight();
+
+  //   const imgWidth = 90;
+  //   const imgHeight = 60;
+  //   const marginX = 10;
+  //   const marginY = 10;
+  //   const gapY = 10;
+  //   let x = marginX;
+  //   let y = marginY;
+
+  //   for (let i = 0; i < history.length; i++) {
+  //     const r = history[i];
+  //     if (r.photo) {
+  //       if (y + imgHeight > pageHeight - marginY) {
+  //         doc.addPage();
+  //         y = marginY;
+  //       }
+
+  //       try {
+  //         doc.addImage(r.photo, 'JPEG', x, y, imgWidth, imgHeight);
+  //         y += imgHeight + gapY;
+  //       } catch (e) {
+  //         console.warn(`이미지 추가 실패: ${e}`);
+  //       }
+  //     }
+  //   }
+    
+
+  //   const pdfFileName = `법인카드사진_${dateStr}.pdf`;
+  //   const pdfBlob = doc.output("blob");
+  //   const pdfFile = new File([pdfBlob], pdfFileName, { type: "application/pdf" });
+
+  //   // ✅ 공유
+  //   if (navigator.canShare && navigator.canShare({ files: [pdfFile, csvFile] })) {
+  //     try {
+  //       await navigator.share({
+  //         files: [pdfFile, csvFile],
+  //         title: "법인카드 자료",
+  //         text: "PDF(사진)와 CSV(내역) 파일입니다."
+  //       });
+  //     } catch (err) {
+  //       alert("공유가 취소되었거나 실패했습니다.");
+  //     }
+  //   } else {
+  //     // fallback: 다운로드
+  //     const a1 = document.createElement("a");
+  //     a1.href = URL.createObjectURL(pdfBlob);
+  //     a1.download = pdfFileName;
+  //     a1.click();
+
+  //     const a2 = document.createElement("a");
+  //     a2.href = URL.createObjectURL(csvBlob);
+  //     a2.download = csvFileName;
+  //     a2.click();
+
+  //     alert("공유가 불가능한 환경입니다. PDF와 CSV가 저장되었습니다.");
+  //   }
+  // }
   async function sendAllMail() {
-  const history = await getAllRecords();
-  if (history.length === 0) return alert("저장된 내역이 없습니다.");
+    const history = await getAllRecords();
+    if (history.length === 0) return alert("저장된 내역이 없습니다.");
 
-  // ✅ CSV 생성
-  let csvContent = 'No.,날짜,사용자,프로젝트,내역\r\n';
-  history.forEach((r, i) => {
-    const row = [
-      i + 1,
-      r.date,
-      `"${r.user}"`,
-      `"${r.pro}"`,
-      `"${r.desc}"`
-    ].join(',');
-    csvContent += row + '\r\n';
-  });
+    // ✅ CSV 생성
+    let csvContent = 'No.,날짜,사용자,프로젝트,내역\r\n';
+    history.forEach((r, i) => {
+      const row = [
+        i + 1,
+        r.date,
+        `"${r.user}"`,
+        `"${r.pro}"`,
+        `"${r.desc}"`
+      ].join(',');
+      csvContent += row + '\r\n';
+    });
 
-  const today = new Date();
-  const yyyy = today.getFullYear();
-  const mm = String(today.getMonth() + 1).padStart(2, '0');
-  const dd = String(today.getDate()).padStart(2, '0');
-  const dateStr = `${yyyy}-${mm}-${dd}`;
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    const dateStr = `${yyyy}-${mm}-${dd}`;
 
-  const csvFileName = `법인카드내역_${dateStr}.csv`;
-  const utf8Bom = '\uFEFF';
-  const csvBlob = new Blob([utf8Bom + csvContent], { type: "text/csv;charset=utf-8" });
-  const csvFile = new File([csvBlob], csvFileName, { type: "text/csv" });
+    const csvFileName = `법인카드내역_${dateStr}.csv`;
+    const utf8Bom = '\uFEFF';
+    const csvBlob = new Blob([utf8Bom + csvContent], { type: "text/csv;charset=utf-8" });
+    const csvFile = new File([csvBlob], csvFileName, { type: "text/csv" });
 
-  // ✅ PDF (사진만 포함)
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const pageHeight = doc.internal.pageSize.getHeight();
+    // ✅ PDF (사진 + 텍스트 이미지 포함)
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
 
-  const imgWidth = 90;
-  const imgHeight = 60;
-  const marginX = 10;
-  const marginY = 10;
-  const gapY = 10;
-  let x = marginX;
-  let y = marginY;
+    const imgWidth = 90;
+    const imgHeight = 60;
+    const textImgWidth = 90;
+    const textImgHeight = 60;
+    const marginX = 10;
+    const marginY = 10;
+    const gapY = 10;
 
-  for (let i = 0; i < history.length; i++) {
-    const r = history[i];
-    if (r.photo) {
-      if (y + imgHeight > pageHeight - marginY) {
+    let x = marginX;
+    let y = marginY;
+
+    for (let i = 0; i < history.length; i++) {
+      const r = history[i];
+
+      // 텍스트 줄 만들기
+      const lines = [
+        `사용자: ${r.user} / 날짜: ${r.date}`,
+        `프로젝트: ${r.pro}`,
+        `내역: ${r.desc}`
+      ];
+
+      // 텍스트 이미지를 생성
+      const textImage = createTextImage(lines);
+
+      // 페이지 공간 체크
+      if (y + imgHeight + textImgHeight > pageHeight - marginY) {
         doc.addPage();
         y = marginY;
       }
 
-      try {
-        doc.addImage(r.photo, 'JPEG', x, y, imgWidth, imgHeight);
-        y += imgHeight + gapY;
-      } catch (e) {
-        console.warn(`이미지 추가 실패: ${e}`);
+      // 사진 추가
+      if (r.photo) {
+        try {
+          doc.addImage(r.photo, 'JPEG', x, y, imgWidth, imgHeight);
+          y += imgHeight + 4;
+        } catch (e) {
+          console.warn(`이미지 추가 실패: ${e}`);
+        }
       }
+
+      // 텍스트 이미지 추가
+      doc.addImage(textImage, 'PNG', x, y, textImgWidth, textImgHeight);
+      y += textImgHeight + gapY;
+    }
+
+    const pdfFileName = `법인카드사진_${dateStr}.pdf`;
+    const pdfBlob = doc.output("blob");
+    const pdfFile = new File([pdfBlob], pdfFileName, { type: "application/pdf" });
+
+    // ✅ 공유 시도
+    if (navigator.canShare && navigator.canShare({ files: [pdfFile, csvFile] })) {
+      try {
+        await navigator.share({
+          files: [pdfFile, csvFile],
+          title: "법인카드 자료",
+          text: "PDF(사진+텍스트)와 CSV(내역) 파일입니다."
+        });
+      } catch (err) {
+        alert("공유가 취소되었거나 실패했습니다.");
+      }
+    } else {
+      // fallback: 다운로드
+      const a1 = document.createElement("a");
+      a1.href = URL.createObjectURL(pdfBlob);
+      a1.download = pdfFileName;
+      a1.click();
+
+      const a2 = document.createElement("a");
+      a2.href = URL.createObjectURL(csvBlob);
+      a2.download = csvFileName;
+      a2.click();
+
+      alert("공유가 불가능한 환경입니다. PDF와 CSV가 저장되었습니다.");
     }
   }
-
-  const pdfFileName = `법인카드사진_${dateStr}.pdf`;
-  const pdfBlob = doc.output("blob");
-  const pdfFile = new File([pdfBlob], pdfFileName, { type: "application/pdf" });
-
-  // ✅ 공유
-  if (navigator.canShare && navigator.canShare({ files: [pdfFile, csvFile] })) {
-    try {
-      await navigator.share({
-        files: [pdfFile, csvFile],
-        title: "법인카드 자료",
-        text: "PDF(사진)와 CSV(내역) 파일입니다."
-      });
-    } catch (err) {
-      alert("공유가 취소되었거나 실패했습니다.");
-    }
-  } else {
-    // fallback: 다운로드
-    const a1 = document.createElement("a");
-    a1.href = URL.createObjectURL(pdfBlob);
-    a1.download = pdfFileName;
-    a1.click();
-
-    const a2 = document.createElement("a");
-    a2.href = URL.createObjectURL(csvBlob);
-    a2.download = csvFileName;
-    a2.click();
-
-    alert("공유가 불가능한 환경입니다. PDF와 CSV가 저장되었습니다.");
-  }
-}
 
 
   window.onload = async () => {
