@@ -22,7 +22,7 @@
 </head>
 <body class="bg-light">
 <div class="container py-4">
-  <h2 class="text-center mb-4">법인카드 내역</h2>
+  <h2 class="text-center mb-4">법인카드 내역(V1.0)</h2>
 
   <form id="cardForm" onsubmit="event.preventDefault(); addRecord();" class="mx-auto" style="max-width:480px;">
     <div class="mb-3">
@@ -445,22 +445,31 @@
 //     const bodyEncoded = encodeURIComponent(body);
 //     location.href = `mailto:${to}?subject=${subject}&body=${bodyEncoded}`;
 //   }
-  function createTextImage(textLines, width = 300, fontSize = 12, lineHeight = 18, padding = 10) {
-    const canvas = document.createElement("canvas");
+  function createTextImage(textLines, width = 600, fontSize = 20, lineHeight = 30, padding = 20) {
     const height = padding * 2 + lineHeight * textLines.length;
-    canvas.width = width;
-    canvas.height = height;
+
+    // 1. 고해상도 캔버스 (텍스트 선명하게)
+    const scale = 2;  // 2배 확대
+    const canvas = document.createElement("canvas");
+    canvas.width = width * scale;
+    canvas.height = height * scale;
 
     const ctx = canvas.getContext("2d");
+    ctx.scale(scale, scale);  // 확대 설정
+
+    // 2. 배경 및 텍스트 스타일
     ctx.fillStyle = "#fff";
     ctx.fillRect(0, 0, width, height);
     ctx.fillStyle = "#000";
-    ctx.font = `${fontSize}px sans-serif`;
+    ctx.font = `bold ${fontSize}px sans-serif`;
+    ctx.textBaseline = "top";
 
+    // 3. 텍스트 줄 그리기
     textLines.forEach((line, index) => {
-      ctx.fillText(line, padding, padding + lineHeight * (index + 1) - 5);
+      ctx.fillText(line, padding, padding + lineHeight * index);
     });
 
+    // 4. base64 이미지로 반환
     return canvas.toDataURL("image/png");
   }
 
