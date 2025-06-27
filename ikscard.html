@@ -22,7 +22,7 @@
 </head>
 <body class="bg-light">
 <div class="container py-4">
-  <h2 class="text-center mb-4">법인카드 내역(v5.0)</h2>
+  <h2 class="text-center mb-4">법인카드 내역(v1.0)</h2>
 
   <form id="cardForm" onsubmit="event.preventDefault(); addRecord();" class="mx-auto" style="max-width:480px;">
     <div class="mb-3">
@@ -445,7 +445,7 @@
 //     const bodyEncoded = encodeURIComponent(body);
 //     location.href = `mailto:${to}?subject=${subject}&body=${bodyEncoded}`;
 //   }
-  function createTextImage(textLines, width = 300, fontSize = 12, lineHeight = 15, padding = 10) {
+  function createTextImage(textLines, width = 250, fontSize = 12, lineHeight = 15, padding = 10) {
     const height = padding * 2 + lineHeight * textLines.length;
     const scale = 2;  // 고해상도
     const canvas = document.createElement("canvas");
@@ -458,7 +458,8 @@
     ctx.fillStyle = "#fff";
     ctx.fillRect(0, 0, width, height);
     ctx.fillStyle = "#000";
-    ctx.font = `bold ${fontSize}px sans-serif`;
+    // ctx.font = `bold ${fontSize}px sans-serif`;
+    ctx.font = `normal ${fontSize}px sans-serif`;
     ctx.textBaseline = "top";
 
     textLines.forEach((line, i) => {
