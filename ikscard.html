@@ -445,7 +445,7 @@
 //     const bodyEncoded = encodeURIComponent(body);
 //     location.href = `mailto:${to}?subject=${subject}&body=${bodyEncoded}`;
 //   }
-  function createTextImage(textLines, width = 300, fontSize = 12, lineHeight = 15, padding = 24) {
+  function createTextImage(textLines, width = 300, fontSize = 12, lineHeight = 15, padding = 10) {
     const height = padding * 2 + lineHeight * textLines.length;
     const scale = 2;  // 고해상도
     const canvas = document.createElement("canvas");
