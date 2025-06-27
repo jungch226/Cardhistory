@@ -22,7 +22,7 @@
 </head>
 <body class="bg-light">
 <div class="container py-4">
-  <h2 class="text-center mb-4">법인카드 내역(v2.0)</h2>
+  <h2 class="text-center mb-4">법인카드 내역(v3.0)</h2>
 
   <form id="cardForm" onsubmit="event.preventDefault(); addRecord();" class="mx-auto" style="max-width:480px;">
     <div class="mb-3">
@@ -445,7 +445,7 @@
 //     const bodyEncoded = encodeURIComponent(body);
 //     location.href = `mailto:${to}?subject=${subject}&body=${bodyEncoded}`;
 //   }
-  function createTextImage(textLines, width = 800, fontSize = 22, lineHeight = 34, padding = 24) {
+  function createTextImage(textLines, width = 900, fontSize = 22, lineHeight = 34, padding = 10) {
     const height = padding * 2 + lineHeight * textLines.length;
     const scale = 2;  // 고해상도
     const canvas = document.createElement("canvas");
