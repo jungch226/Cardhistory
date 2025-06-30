@@ -22,7 +22,7 @@
 </head>
 <body class="bg-light">
 <div class="container py-4">
-  <h2 class="text-center mb-4">법인카드 내역(v1.7)</h2>
+  <h2 class="text-center mb-4">법인카드 내역(v1.3)</h2>
 
   <form id="cardForm" onsubmit="event.preventDefault(); addRecord();" class="mx-auto" style="max-width:480px;">
     <div class="mb-3">
@@ -380,15 +380,16 @@
       if (r.photo) {
         try {
           // doc.addImage(r.photo, 'JPEG', x, y, imgWidth, imgHeight);
-          doc.addImage(r.photo, 'JPEG',
-            x,                         // 기존 y → x로 쓰면 됨
-            y - imgWidth + imgHeight,  // 이미지가 위로 가는 걸 막기 위해 y 보정
-            imgHeight,                 // w, h 서로 바꿔야 함 (회전되었기 때문)
-            imgWidth,
-            undefined,
-            'FAST',
-            90
-          );
+            doc.addImage(
+                r.photo, 'JPEG',
+                x + imgHeight,  // x 좌표에 imgHeight를 더해줌 (회전된 이미지 가로 길이만큼 오른쪽 이동)
+                y,
+                imgHeight,      // 회전되었으므로 너비 = 원래 높이
+                imgWidth,       // 회전되었으므로 높이 = 원래 너비
+                undefined,
+                'FAST',
+                -90              // 시계 방향 90도 회전
+              );
         } catch (e) {
           console.warn(`이미지 추가 실패: ${e}`);
         }
