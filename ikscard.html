@@ -22,7 +22,7 @@
 </head>
 <body class="bg-light">
 <div class="container py-4">
-  <h2 class="text-center mb-4">법인카드 내역(v1.0)</h2>
+  <h2 class="text-center mb-4">법인카드 내역(v1.3)</h2>
 
   <form id="cardForm" onsubmit="event.preventDefault(); addRecord();" class="mx-auto" style="max-width:480px;">
     <div class="mb-3">
@@ -98,6 +98,7 @@
     localStorage.setItem('selectedUser', user);
   }
 
+  // IndexedDB 열기 및 객체 저장소 생성
   function openDB() {
     return new Promise((resolve, reject) => {
       const request = indexedDB.open('CardDB', 1);
@@ -116,6 +117,7 @@
     });
   }
 
+  // 이미지 base64 미리보기 및 저장
   function previewImage(event) {
     const file = event.target.files[0];
     if (file) {
@@ -125,10 +127,31 @@
         img.src = e.target.result;
         img.style.display = 'block';
         document.getElementById('previewText').style.display = 'none';
-        base64ImageData = e.target.result;
+        base64ImageData = e.target.result;  // base64로 저장
       };
       reader.readAsDataURL(file);
     }
+  }
+
+  // 이미지 회전 함수 (90도 시계 방향)
+  function rotateImage(base64, callback) {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      // 세로(높이)를 가로(넓이)로, 가로를 세로로 바꿈 (90도 회전)
+      canvas.width = img.height;
+      canvas.height = img.width;
+      const ctx = canvas.getContext('2d');
+
+      // 90도 회전 후 그리기
+      ctx.translate(canvas.width / 2, canvas.height / 2);
+      ctx.rotate(90 * Math.PI / 180);
+      ctx.drawImage(img, -img.width / 2, -img.height / 2);
+
+      const rotatedBase64 = canvas.toDataURL('image/jpeg', 0.9);
+      callback(rotatedBase64);
+    };
+    img.src = base64;
   }
 
   async function addRecord() {
@@ -140,18 +163,34 @@
     localStorage.setItem('wdesc', desc);
     localStorage.setItem('wpro', pro);
 
-    const record = { user, desc, pro, date, photo: base64ImageData || "" };
+    if (!user || !desc || !pro || !date) {
+      return alert("모든 항목을 입력해주세요");
+    }
 
+    if (!base64ImageData) {
+      // 이미지 없으면 바로 저장
+      saveRecord({ user, desc, pro, date, photo: "" });
+    } else {
+      // 이미지가 있으면 회전 후 저장
+      rotateImage(base64ImageData, (rotatedBase64) => {
+        saveRecord({ user, desc, pro, date, photo: rotatedBase64 });
+      });
+    }
+  }
+
+  function saveRecord(record) {
     const tx = db.transaction('cards', 'readwrite');
     const store = tx.objectStore('cards');
     store.add(record);
 
     tx.oncomplete = () => {
+      // 입력 후 폼 리셋 및 렌더링
       document.getElementById('cardForm').reset();
-      document.getElementById('user').value = user;
-      document.getElementById('date').value = date;
-      document.getElementById('desc').value = desc;
-      document.getElementById('pro').value = pro;
+      // 사용자, 날짜, 내역, 프로젝트는 이전 값 복원
+      document.getElementById('user').value = record.user;
+      document.getElementById('date').value = record.date;
+      document.getElementById('desc').value = record.desc;
+      document.getElementById('pro').value = record.pro;
 
       base64ImageData = "";
 
@@ -227,8 +266,9 @@
     tx.onerror = () => alert('초기화 실패');
   }
 
-  function createTextImage(textLines, width = 200, fontSize = 10, lineHeight = 12, padding = 10) {
-    const scale = 2;  // 고해상도용 스케일
+  // 텍스트를 캔버스 이미지로 변환 (자동 줄바꿈 포함)
+  function createTextImage(textLines, width = 200, fontSize = 10, lineHeight = 14, padding = 10) {
+    const scale = 2;
     const ctxFont = `${fontSize}px sans-serif`;
 
     const tempCanvas = document.createElement("canvas");
@@ -275,37 +315,6 @@
     });
 
     return canvas.toDataURL("image/png");
-  }
-
-  // 이미지 90도 회전 후 jsPDF에 추가하는 함수
-  function addRotatedImage(doc, imgData, x, y, width, height, rotation = 90) {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-
-    if (rotation % 180 === 90) {
-      canvas.width = height;
-      canvas.height = width;
-    } else {
-      canvas.width = width;
-      canvas.height = height;
-    }
-
-    const img = new Image();
-    img.src = imgData;
-
-    return new Promise((resolve) => {
-      img.onload = () => {
-        ctx.translate(canvas.width / 2, canvas.height / 2);
-        ctx.rotate((rotation * Math.PI) / 180);
-        ctx.drawImage(img, -width / 2, -height / 2, width, height);
-
-        const rotatedDataUrl = canvas.toDataURL('image/jpeg');
-
-        doc.addImage(rotatedDataUrl, 'JPEG', x, y, canvas.width, canvas.height);
-
-        resolve();
-      };
-    });
   }
 
   async function sendAllMail() {
@@ -363,6 +372,7 @@
       ];
 
       const textImage = createTextImage(lines, textImgWidth, 6, 14);
+
       const rowHeight = Math.max(imgHeight, textImgHeight);
 
       if (y + rowHeight > pageHeight - marginY) {
@@ -372,7 +382,7 @@
 
       if (r.photo) {
         try {
-          await addRotatedImage(doc, r.photo, x, y, imgWidth, imgHeight, 90);
+          doc.addImage(r.photo, 'JPEG', x, y, imgWidth, imgHeight);
         } catch (e) {
           console.warn(`이미지 추가 실패: ${e}`);
         }
@@ -384,49 +394,64 @@
     }
 
     const pdfFileName = `법인카드사진_${dateStr}.pdf`;
-    const pdfBlob = doc.output('blob');
-
-    // 파일 저장 & 메일 첨부 시나리오 (파일 객체 생성)
+    const pdfBlob = doc.output("blob");
     const pdfFile = new File([pdfBlob], pdfFileName, { type: "application/pdf" });
 
-    // 여기에서 서버에 파일 전송 또는 메일 전송 함수 호출 가능
-    alert("PDF 생성 완료 (서버 전송 코드 필요)");
-
-    // 예시: 다운로드 링크 생성
-    /*
-    const url = URL.createObjectURL(pdfBlob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = pdfFileName;
-    a.click();
-    URL.revokeObjectURL(url);
-    */
+    if (navigator.canShare && navigator.canShare({ files: [pdfFile, csvFile] })) {
+      try {
+        await navigator.share({
+          files: [pdfFile, csvFile],
+          title: "법인카드 내역",
+          text: `법인카드 내역 공유 (${dateStr})`
+        });
+      } catch (e) {
+        alert("공유가 취소되었습니다.");
+      }
+    } else {
+      alert("파일 공유를 지원하지 않는 환경입니다.");
+    }
   }
 
-  // 페이지 로드 시 DB 열고, 히스토리 렌더링
-  (async () => {
-    await openDB();
-
-    // 로컬 저장된 선택 사용자 복원
-    const savedUser = localStorage.getItem('selectedUser');
-    if (savedUser) document.getElementById('user').value = savedUser;
-
-    // 이전에 입력했던 내역 복원
-    const wdesc = localStorage.getItem('wdesc');
-    if (wdesc) document.getElementById('desc').value = wdesc;
-    const wpro = localStorage.getItem('wpro');
-    if (wpro) document.getElementById('pro').value = wpro;
-
-    renderHistory();
-  })();
-
+  // 업로드 사진 선택 팝업
   function showChoice() {
-    if (confirm("사진을 촬영하시겠습니까?\n취소하면 갤러리에서 선택합니다.")) {
+    const useCamera = confirm("사진을 직접 촬영하시겠습니까? 확인: 카메라, 취소: 갤러리");
+    if (useCamera) {
       document.getElementById('cameraInput').click();
     } else {
       document.getElementById('galleryInput').click();
     }
   }
+
+  // 페이지 로드 시 저장된 사용자 복원, 오늘 날짜 세팅, 입력값 복원 및 히스토리 렌더링
+  (async () => {
+    await openDB();
+
+    // 사용자 선택값 복원
+    const savedUser = localStorage.getItem('selectedUser');
+    if (savedUser) {
+      document.getElementById('user').value = savedUser;
+    }
+
+    // 내역, 프로젝트 복원
+    const savedDesc = localStorage.getItem('wdesc');
+    if (savedDesc) document.getElementById('desc').value = savedDesc;
+
+    const savedPro = localStorage.getItem('wpro');
+    if (savedPro) document.getElementById('pro').value = savedPro;
+
+    // 오늘 날짜 자동 세팅
+    const dateInput = document.getElementById('date');
+    if (!dateInput.value) {
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, '0');
+      const dd = String(today.getDate()).padStart(2, '0');
+      dateInput.value = `${yyyy}-${mm}-${dd}`;
+    }
+
+    renderHistory();
+  })();
+
 </script>
 </body>
 </html>
