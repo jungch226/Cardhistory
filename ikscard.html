@@ -22,7 +22,7 @@
 </head>
 <body class="bg-light">
 <div class="container py-4">
-  <h2 class="text-center mb-4">법인카드 내역(v1.0)</h2>
+  <h2 class="text-center mb-4">법인카드 내역(v1.1)</h2>
 
   <form id="cardForm" onsubmit="event.preventDefault(); addRecord();" class="mx-auto" style="max-width:480px;">
     <div class="mb-3">
@@ -523,7 +523,78 @@
     return canvas.toDataURL("image/png");
   }
 
-  
+  function fixImageOrientation(img, callback) {
+    // img: HTMLImageElement 로드된 이미지
+
+    // 임시 캔버스 생성
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // 이미지 폭/높이
+    let width = img.naturalWidth;
+    let height = img.naturalHeight;
+
+    // EXIF Orientation 읽기 (Tesseract.js나 다른 라이브러리, 또는 exif-js 등 사용 가능)
+    // 여기서는 간단히 1번 (정상)으로 가정
+    let orientation = 1; 
+
+    // TODO: 실제 EXIF orientation값을 읽어서 아래 조건에 맞게 처리하세요.
+
+    // orientation 값에 따른 캔버스 크기 조정과 회전
+    if (orientation > 4) {
+      canvas.width = height;
+      canvas.height = width;
+    } else {
+      canvas.width = width;
+      canvas.height = height;
+    }
+
+    switch (orientation) {
+      case 2:
+        // horizontal flip
+        ctx.translate(width, 0);
+        ctx.scale(-1, 1);
+        break;
+      case 3:
+        // 180° rotate left
+        ctx.translate(width, height);
+        ctx.rotate(Math.PI);
+        break;
+      case 4:
+        // vertical flip
+        ctx.translate(0, height);
+        ctx.scale(1, -1);
+        break;
+      case 5:
+        // vertical flip + 90 rotate right
+        ctx.rotate(0.5 * Math.PI);
+        ctx.scale(1, -1);
+        break;
+      case 6:
+        // 90° rotate right
+        ctx.rotate(0.5 * Math.PI);
+        ctx.translate(0, -height);
+        break;
+      case 7:
+        // horizontal flip + 90 rotate right
+        ctx.rotate(0.5 * Math.PI);
+        ctx.translate(width, -height);
+        ctx.scale(-1, 1);
+        break;
+      case 8:
+        // 90° rotate left
+        ctx.rotate(-0.5 * Math.PI);
+        ctx.translate(-width, 0);
+        break;
+      default:
+        break;
+    }
+
+    ctx.drawImage(img, 0, 0);
+
+    callback(canvas.toDataURL());
+  }
+
   async function sendAllMail() {
     const history = await getAllRecords();
     if (history.length === 0) return alert("저장된 내역이 없습니다.");
@@ -595,7 +666,13 @@
       // 사진 왼쪽에 추가
       if (r.photo) {
         try {
-          doc.addImage(r.photo, 'JPEG', x, y, imgWidth, imgHeight);
+          const imgElement = new Image();
+          imgElement.onload = () => {
+            fixImageOrientation(imgElement, (fixedBase64) => {
+              doc.addImage(fixedBase64, 'JPEG', x, y, imgWidth, imgHeight);
+            });
+          };
+          imgElement.src = r.photo;
         } catch (e) {
           console.warn(`이미지 추가 실패: ${e}`);
         }
