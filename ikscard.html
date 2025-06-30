@@ -22,7 +22,7 @@
 </head>
 <body class="bg-light">
 <div class="container py-4">
-  <h2 class="text-center mb-4">법인카드 내역(v1.3)</h2>
+  <h2 class="text-center mb-4">법인카드 내역(v1.0)</h2>
 
   <form id="cardForm" onsubmit="event.preventDefault(); addRecord();" class="mx-auto" style="max-width:480px;">
     <div class="mb-3">
@@ -469,7 +469,7 @@
   //   return canvas.toDataURL("image/png");
   // }
   function createTextImage(textLines, width = 200, fontSize = 10, lineHeight = 12, padding = 10) {
-    const scale = 1;  // 고해상도용 스케일
+    const scale = 2;  // 고해상도용 스케일
     const ctxFont = `${fontSize}px sans-serif`;
 
     // 캔버스 임시 생성 및 컨텍스트 얻기
@@ -560,7 +560,7 @@
 
     const imgWidth = 60;
     const imgHeight = 90;
-    const textImgWidth = 100;  // 오른쪽 텍스트 이미지 넓이
+    const textImgWidth = 120;  // 오른쪽 텍스트 이미지 넓이
     const textImgHeight = 60;
     const marginX = 10;
     const marginY = 10;
@@ -574,13 +574,14 @@
       const r = history[i];
 
       const lines = [
-        `사용자: ${r.user} / 날짜: ${r.date}`,
+        `사용자: ${r.user}`,
+        `날짜: ${r.date}`,
         `프로젝트: ${r.pro}`,
         `내역: ${r.desc}`
       ];
 
       // 텍스트 이미지 생성 (width 파라미터 추가)
-      const textImage = createTextImage(lines, textImgWidth, 8, 14);
+      const textImage = createTextImage(lines, textImgWidth, 6, 14);
 
       // 한 행 높이는 이미지 높이 중 큰 쪽으로 설정
       const rowHeight = Math.max(imgHeight, textImgHeight);
