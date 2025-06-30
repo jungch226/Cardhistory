@@ -22,7 +22,7 @@
 </head>
 <body class="bg-light">
 <div class="container py-4">
-  <h2 class="text-center mb-4">법인카드 내역(v1.1)</h2>
+  <h2 class="text-center mb-4">법인카드 내역(v1.2)</h2>
 
   <form id="cardForm" onsubmit="event.preventDefault(); addRecord();" class="mx-auto" style="max-width:480px;">
     <div class="mb-3">
@@ -468,8 +468,8 @@
 
   //   return canvas.toDataURL("image/png");
   // }
-  function createTextImage(textLines, width = 200, fontSize = 6, lineHeight = 12, padding = 10) {
-    const scale = 2;  // 고해상도용 스케일
+  function createTextImage(textLines, width = 200, fontSize = 10, lineHeight = 12, padding = 10) {
+    const scale = 1;  // 고해상도용 스케일
     const ctxFont = `${fontSize}px sans-serif`;
 
     // 캔버스 임시 생성 및 컨텍스트 얻기
@@ -560,8 +560,8 @@
 
     const imgWidth = 60;
     const imgHeight = 90;
-    const textImgWidth = 100;  // 오른쪽 텍스트 이미지 넓이
-    const textImgHeight = 90;
+    const textImgWidth = 80;  // 오른쪽 텍스트 이미지 넓이
+    const textImgHeight = 60;
     const marginX = 10;
     const marginY = 10;
     const gapY = 5;
