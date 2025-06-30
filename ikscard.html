@@ -22,7 +22,7 @@
 </head>
 <body class="bg-light">
 <div class="container py-4">
-  <h2 class="text-center mb-4">법인카드 내역(v1.5)</h2>
+  <h2 class="text-center mb-4">법인카드 내역(v1.1)</h2>
 
   <form id="cardForm" onsubmit="event.preventDefault(); addRecord();" class="mx-auto" style="max-width:480px;">
     <div class="mb-3">
@@ -171,10 +171,6 @@
       // 이미지 없으면 바로 저장
       saveRecord({ user, desc, pro, date, photo: "" });
     } else {
-      // 이미지가 있으면 회전 후 저장
-      // rotateImage(base64ImageData, (rotatedBase64) => {
-      //   saveRecord({ user, desc, pro, date, photo: rotatedBase64 });
-      // });
       saveRecord({ user, desc, pro, date, photo: base64ImageData });
     }
   }
@@ -383,7 +379,8 @@
 
       if (r.photo) {
         try {
-          doc.addImage(r.photo, 'JPEG', x, y, imgWidth, imgHeight);
+          // doc.addImage(r.photo, 'JPEG', x, y, imgWidth, imgHeight);
+          doc.addImage(r.photo, 'JPEG', x, y, imgWidth, imgHeight, undefined, 'FAST', 90);
         } catch (e) {
           console.warn(`이미지 추가 실패: ${e}`);
         }
