@@ -22,7 +22,7 @@
 </head>
 <body class="bg-light">
 <div class="container py-4">
-  <h2 class="text-center mb-4">법인카드 내역(v1.4)</h2>
+  <h2 class="text-center mb-4">법인카드 내역(v1.1)</h2>
 
   <form id="cardForm" onsubmit="event.preventDefault(); addRecord();" class="mx-auto" style="max-width:480px;">
     <div class="mb-3">
@@ -445,25 +445,79 @@
 //     const bodyEncoded = encodeURIComponent(body);
 //     location.href = `mailto:${to}?subject=${subject}&body=${bodyEncoded}`;
 //   }
+  // function createTextImage(textLines, width = 200, fontSize = 6, lineHeight = 12, padding = 10) {
+  //   const height = padding * 2 + lineHeight * textLines.length;
+  //   const scale = 2;  // 고해상도
+  //   const canvas = document.createElement("canvas");
+  //   canvas.width = width * scale;
+  //   canvas.height = height * scale;
+
+  //   const ctx = canvas.getContext("2d");
+  //   ctx.scale(scale, scale);
+
+  //   ctx.fillStyle = "#fff";
+  //   ctx.fillRect(0, 0, width, height);
+  //   ctx.fillStyle = "#000";
+  //   // ctx.font = `bold ${fontSize}px sans-serif`;
+  //   ctx.font = `normal ${fontSize}px sans-serif`;
+  //   ctx.textBaseline = "top";
+
+  //   textLines.forEach((line, i) => {
+  //     ctx.fillText(line, padding, padding + lineHeight * i);
+  //   });
+
+  //   return canvas.toDataURL("image/png");
+  // }
   function createTextImage(textLines, width = 200, fontSize = 6, lineHeight = 12, padding = 10) {
-    const height = padding * 2 + lineHeight * textLines.length;
-    const scale = 2;  // 고해상도
+    const scale = 2;  // 고해상도용 스케일
+    const ctxFont = `${fontSize}px sans-serif`;
+
+    // 캔버스 임시 생성 및 컨텍스트 얻기
+    const tempCanvas = document.createElement("canvas");
+    const tempCtx = tempCanvas.getContext("2d");
+    tempCtx.font = ctxFont;
+
+    // 줄바꿈 후 실제 출력할 모든 텍스트 라인 배열 만들기
+    const wrappedLines = [];
+
+    textLines.forEach(line => {
+      let words = line.split(' ');
+      let currentLine = '';
+
+      for (let n = 0; n < words.length; n++) {
+        const testLine = currentLine ? currentLine + ' ' + words[n] : words[n];
+        const testWidth = tempCtx.measureText(testLine).width;
+
+        if (testWidth > width - 2 * padding) {
+          if (currentLine) wrappedLines.push(currentLine);
+          currentLine = words[n];
+        } else {
+          currentLine = testLine;
+        }
+      }
+      if (currentLine) wrappedLines.push(currentLine);
+    });
+
+    // 캔버스 높이 계산 (패딩 + 줄 수 * 줄 높이)
+    const height = padding * 2 + wrappedLines.length * lineHeight;
+
+    // 실제 캔버스 생성
     const canvas = document.createElement("canvas");
     canvas.width = width * scale;
     canvas.height = height * scale;
-
     const ctx = canvas.getContext("2d");
     ctx.scale(scale, scale);
 
     ctx.fillStyle = "#fff";
     ctx.fillRect(0, 0, width, height);
+
     ctx.fillStyle = "#000";
-    // ctx.font = `bold ${fontSize}px sans-serif`;
-    ctx.font = `normal ${fontSize}px sans-serif`;
+    ctx.font = ctxFont;
     ctx.textBaseline = "top";
 
-    textLines.forEach((line, i) => {
-      ctx.fillText(line, padding, padding + lineHeight * i);
+    // 줄 단위 텍스트 출력
+    wrappedLines.forEach((line, i) => {
+      ctx.fillText(line, padding, padding + i * lineHeight);
     });
 
     return canvas.toDataURL("image/png");
