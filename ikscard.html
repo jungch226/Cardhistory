@@ -22,7 +22,7 @@
 </head>
 <body class="bg-light">
 <div class="container py-4">
-  <h2 class="text-center mb-4">법인카드 내역(v1.2)</h2>
+  <h2 class="text-center mb-4">법인카드 내역(v1.3)</h2>
 
   <form id="cardForm" onsubmit="event.preventDefault(); addRecord();" class="mx-auto" style="max-width:480px;">
     <div class="mb-3">
@@ -560,7 +560,7 @@
 
     const imgWidth = 60;
     const imgHeight = 90;
-    const textImgWidth = 80;  // 오른쪽 텍스트 이미지 넓이
+    const textImgWidth = 100;  // 오른쪽 텍스트 이미지 넓이
     const textImgHeight = 60;
     const marginX = 10;
     const marginY = 10;
@@ -580,7 +580,7 @@
       ];
 
       // 텍스트 이미지 생성 (width 파라미터 추가)
-      const textImage = createTextImage(lines, textImgWidth, 10, 14);
+      const textImage = createTextImage(lines, textImgWidth, 8, 14);
 
       // 한 행 높이는 이미지 높이 중 큰 쪽으로 설정
       const rowHeight = Math.max(imgHeight, textImgHeight);
