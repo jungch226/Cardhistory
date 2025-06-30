@@ -22,7 +22,7 @@
 </head>
 <body class="bg-light">
 <div class="container py-4">
-  <h2 class="text-center mb-4">법인카드 내역(v1.1)</h2>
+  <h2 class="text-center mb-4">법인카드 내역(v1.2)</h2>
 
   <form id="cardForm" onsubmit="event.preventDefault(); addRecord();" class="mx-auto" style="max-width:480px;">
     <div class="mb-3">
@@ -474,7 +474,7 @@
     const history = await getAllRecords();
     if (history.length === 0) return alert("저장된 내역이 없습니다.");
 
-    // ✅ CSV 생성
+    // CSV 생성
     let csvContent = 'No.,날짜,사용자,프로젝트,내역\r\n';
     history.forEach((r, i) => {
       const row = [
@@ -498,27 +498,20 @@
     const csvBlob = new Blob([utf8Bom + csvContent], { type: "text/csv;charset=utf-8" });
     const csvFile = new File([csvBlob], csvFileName, { type: "text/csv" });
 
-    // ✅ PDF (사진 + 텍스트 이미지 포함)
+    // PDF 생성
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
 
-    // const imgWidth = 90;
-    // const imgHeight = 60;
-    // const textImgWidth = 90;
-    // const textImgHeight = 60;
-    // const marginX = 10;
-    // const marginY = 10;
-    // const gapY = 10;
-
     const imgWidth = 60;
     const imgHeight = 90;
-    const textImgWidth = 60;
-    const textImgHeight = 60;
+    const textImgWidth = 120;  // 오른쪽 텍스트 이미지 넓이
+    const textImgHeight = 90;
     const marginX = 10;
     const marginY = 10;
     const gapY = 10;
+    const gapX = 10;
 
     let x = marginX;
     let y = marginY;
@@ -526,42 +519,45 @@
     for (let i = 0; i < history.length; i++) {
       const r = history[i];
 
-      // 텍스트 줄 만들기
       const lines = [
         `사용자: ${r.user} / 날짜: ${r.date}`,
         `프로젝트: ${r.pro}`,
         `내역: ${r.desc}`
       ];
 
-      // 텍스트 이미지를 생성
-      const textImage = createTextImage(lines);
+      // 텍스트 이미지 생성 (width 파라미터 추가)
+      const textImage = createTextImage(lines, textImgWidth, 10, 14);
 
-      // 페이지 공간 체크
-      if (y + imgHeight + textImgHeight > pageHeight - marginY) {
+      // 한 행 높이는 이미지 높이 중 큰 쪽으로 설정
+      const rowHeight = Math.max(imgHeight, textImgHeight);
+
+      // 페이지 하단 공간 체크
+      if (y + rowHeight > pageHeight - marginY) {
         doc.addPage();
         y = marginY;
       }
 
-      // 사진 추가
+      // 사진 왼쪽에 추가
       if (r.photo) {
         try {
           doc.addImage(r.photo, 'JPEG', x, y, imgWidth, imgHeight);
-          y += imgHeight + 4;
         } catch (e) {
           console.warn(`이미지 추가 실패: ${e}`);
         }
       }
 
-      // 텍스트 이미지 추가
-      doc.addImage(textImage, 'PNG', x, y, textImgWidth, textImgHeight);
-      y += textImgHeight + gapY;
+      // 텍스트 이미지 오른쪽에 추가
+      doc.addImage(textImage, 'PNG', x + imgWidth + gapX, y, textImgWidth, textImgHeight);
+
+      // 다음 행으로 Y 좌표 이동
+      y += rowHeight + gapY;
     }
 
     const pdfFileName = `법인카드사진_${dateStr}.pdf`;
     const pdfBlob = doc.output("blob");
     const pdfFile = new File([pdfBlob], pdfFileName, { type: "application/pdf" });
 
-    // ✅ 공유 시도
+    // 공유 시도
     if (navigator.canShare && navigator.canShare({ files: [pdfFile, csvFile] })) {
       try {
         await navigator.share({
@@ -587,6 +583,7 @@
       alert("공유가 불가능한 환경입니다. PDF와 CSV가 저장되었습니다.");
     }
   }
+
 
 
   window.onload = async () => {
