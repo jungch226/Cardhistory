@@ -22,7 +22,7 @@
 </head>
 <body class="bg-light">
 <div class="container py-4">
-  <h2 class="text-center mb-4">법인카드 내역(v1.1)</h2>
+  <h2 class="text-center mb-4">법인카드 내역(v1.0)</h2>
 
   <form id="cardForm" onsubmit="event.preventDefault(); addRecord();" class="mx-auto" style="max-width:480px;">
     <div class="mb-3">
@@ -49,10 +49,6 @@
       <label for="pro" class="form-label">프로젝트</label>
       <input type="text" id="pro" class="form-control" placeholder="예: 순천 POSCO 형상 모니터링" required>
     </div>
-    <!-- <div class="mb-3">
-      <label for="amount" class="form-label">금액</label>
-      <input type="text" id="amount" class="form-control" placeholder="예: 45,000" min="1" required>
-    </div> -->
     <div class="mb-3">
       <label for="date" class="form-label">날짜</label>
       <input type="date" id="date" class="form-control" required>
@@ -82,25 +78,8 @@
         <img id="preview" alt="미리보기" style="max-width: 100%; height: auto; display: none;">
       </div>
     </div>
-    <!-- <div class="mb-3">
-    <label for="phototext" class="form-label">사진에서 인식된 텍스트 (OCR 결과)</label>
-      <textarea id="phototext" class="form-control" rows="3" placeholder="OCR 결과가 여기에 표시됩니다."></textarea>
-    </div> -->
-    <!-- <div class="mb-3">
-      <div class="d-flex gap-3">
-        <div class="form-check">
-          <input class="form-check-input" type="radio" name="ocrOption" id="ocrYes" value="YES" required>
-          <label class="form-check-label" for="ocrYes">OCR 첨부</label>
-        </div>
-        <div class="form-check">
-          <input class="form-check-input" type="radio" name="ocrOption" id="ocrNo" value="NO">
-          <label class="form-check-label" for="ocrNo">OCR 미첨부</label>
-        </div>
-      </div>
-    </div> -->
     <div class="d-grid gap-2">
       <button class="btn btn-success" type="submit">내역 추가</button>
-      <!-- <button class="btn btn-primary" type="button" onclick="exportPDF()">PDF 저장</button> -->
       <button class="btn btn-secondary" type="button" onclick="sendAllMail()">공유하기</button>
       <button class="btn btn-danger" type="button" onclick="clearHistory()">히스토리 초기화</button>
     </div>
@@ -113,35 +92,12 @@
 <script>
   let db;
   let base64ImageData = "";
-//   const amountInput = document.getElementById('amount');
 
-//   amountInput.addEventListener('input', function (e) {
-//     const input = e.target;
-
-//     // 숫자만 남기기
-//     let raw = input.value.replace(/[^0-9]/g, '');
-
-//     // 빈값이면 빈 문자열
-//     if (!raw) {
-//       input.value = '';
-//       return;
-//     }
-
-//     // 천 단위 콤마 붙이기
-//     input.value = Number(raw).toLocaleString();
-
-//     // 커서 위치는 간단히 맨 뒤로 이동
-//     input.selectionStart = input.selectionEnd = input.value.length;
-//   });
   function saveSelectedUser() {
     const user = document.getElementById('user').value;
     localStorage.setItem('selectedUser', user);
   }
-    // 콤마 제거한 원본 숫자 가져오기
-  function getRawAmount() {
-    return amountInput.value.replace(/,/g, '');
-  }
-  // IndexedDB 열기 및 객체 저장소 생성
+
   function openDB() {
     return new Promise((resolve, reject) => {
       const request = indexedDB.open('CardDB', 1);
@@ -159,128 +115,7 @@
       };
     });
   }
-  async function runOCR() {
-    if (!base64ImageData) {
-      alert("사진을 먼저 선택하세요");
-      return;
-    }
 
-    // const phototext = document.getElementById('phototext');
-    // phototext.textContent = "인식 중...";
-
-    // try {
-    //   const worker = await Tesseract.createWorker("kor");
-    //   const { data: { text } } = await worker.recognize(base64ImageData);
-    //   await worker.terminate();
-
-    //   // 줄바꿈 자동 삽입 (예: 마침표, 콜론, 중점, 하이픈 등 뒤에 줄바꿈)
-    //   let cleaned = text
-    //     .replace(/\s+/g, ' ')                      // 여러 공백을 하나로
-    //     .replace(/([.:·-])\s*/g, '$1\n')           // 기호 뒤에 줄바꿈
-    //     .trim();
-
-    //   // 최대 길이 제한
-    //   const MAX_LENGTH = 500;
-    //   if (cleaned.length > MAX_LENGTH) {
-    //     cleaned = cleaned.slice(0, MAX_LENGTH) + '...';
-    //   }
-
-    //   phototext.textContent = cleaned || "인식 실패";
-    // } catch (err) {
-    //   console.error("OCR 오류:", err);
-    //   phototext.textContent = "인식 실패";
-    // }
-  }
-  // function previewImage(e) {
-  //   const file = e.target.files[0];
-  //   const preview = document.getElementById('preview');
-  //   const previewText = document.getElementById('previewText');
-  //   if (!file) return;
-
-  //   const reader = new FileReader();
-  //   reader.onload = function(evt) {
-  //     const img = new Image();
-  //     img.onload = async () => {
-  //       const canvas = document.createElement('canvas');
-  //       const MAX_WIDTH = 800;
-  //       const scale = Math.min(MAX_WIDTH / img.width, 1);
-  //       canvas.width = img.width * scale;
-  //       canvas.height = img.height * scale;
-  //       const ctx = canvas.getContext('2d');
-  //       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-  //       // ✅ Grayscale + Thresholding
-  //       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  //       const data = imageData.data;
-  //       for (let i = 0; i < data.length; i += 4) {
-  //         const avg = (data[i] + data[i+1] + data[i+2]) / 3;
-  //         const threshold = 180;
-  //         const val = avg > threshold ? 255 : 0;
-  //         data[i] = data[i+1] = data[i+2] = val;
-  //       }
-  //       ctx.putImageData(imageData, 0, 0);
-
-  //       base64ImageData = canvas.toDataURL('image/jpeg', 0.9);
-  //       preview.src = base64ImageData;
-  //       preview.style.display = 'block';
-  //       previewText.style.display = 'none';
-
-  //       await runOCR();
-  //     };
-  //     img.src = evt.target.result;
-  //   };
-  //   reader.readAsDataURL(file);
-  // }
-//   function previewImage(e) {
-//     const file = e.target.files[0];
-//     const preview = document.getElementById('preview');
-//     const previewText = document.getElementById('previewText');
-//     if (!file) return;
-
-//     const reader = new FileReader();
-//     reader.onload = function(evt) {
-//       const img = new Image();
-//       img.onload = async () => {
-//         const canvas = document.createElement('canvas');
-//         const MAX_WIDTH = 800;
-//         const scale = Math.min(MAX_WIDTH / img.width, 1);
-//         canvas.width = img.width * scale;
-//         canvas.height = img.height * scale;
-//         const ctx = canvas.getContext('2d');
-//         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-//         base64ImageData = canvas.toDataURL('image/jpeg', 0.8);
-//         preview.src = base64ImageData;
-//         preview.style.display = 'block';
-//         previewText.style.display = 'none';
-
-//         // ✅ 이미지 처리 후 OCR 자동 실행
-//         // await runOCR();
-//       };
-//       img.src = evt.target.result;
-//     };
-//     reader.readAsDataURL(file);
-//   }
- function showChoice() {
-    const choice = confirm("카메라로 촬영하시겠습니까?\n취소를 누르면 앨범에서 선택합니다.");
-    if (choice) {
-      document.getElementById('cameraInput').click(); // 카메라
-    } else {
-      document.getElementById('galleryInput').click(); // 앨범
-    }
-  }
-
-//   function previewImage(event) {
-//     const file = event.target.files[0];
-//     if (file) {
-//       const reader = new FileReader();
-//       reader.onload = function(e) {
-//         const img = document.getElementById('preview');
-//         img.src = e.target.result;
-//         document.getElementById('previewText').style.display = 'none';
-//       };
-//       reader.readAsDataURL(file);
-//     }
-//   }
   function previewImage(event) {
     const file = event.target.files[0];
     if (file) {
@@ -290,7 +125,7 @@
         img.src = e.target.result;
         img.style.display = 'block';
         document.getElementById('previewText').style.display = 'none';
-        base64ImageData = e.target.result;  // base64로 저장
+        base64ImageData = e.target.result;
       };
       reader.readAsDataURL(file);
     }
@@ -300,38 +135,23 @@
     const user = document.getElementById('user').value;
     const desc = document.getElementById('desc').value;
     const pro = document.getElementById('pro').value;
-    // const amount = document.getElementById('amount').value;
     const date = document.getElementById('date').value;
 
     localStorage.setItem('wdesc', desc);
     localStorage.setItem('wpro', pro);
 
-    // const includeOCR = document.getElementById("ocrYes").checked;  
-    // const ocrNo = document.getElementById("ocrNo").checked;  
-    // const phototext  = document.getElementById('phototext').value;
-    // if (!user || !desc || !pro || !amount || !date)
-    // if (!user || !desc || !pro  || !date)
-    //     return alert("모든 항목을 입력해주세요");
-    
-    // const record = { user, desc, pro, date, photo: base64ImageData || "" 
-    //   ,ocrText: document.getElementById('phototext').value || ""
-    // };
-    const record = { user, desc, pro, date, photo: base64ImageData || "" 
-      
-    };
+    const record = { user, desc, pro, date, photo: base64ImageData || "" };
+
     const tx = db.transaction('cards', 'readwrite');
     const store = tx.objectStore('cards');
     store.add(record);
 
     tx.oncomplete = () => {
-      // 입력 후 폼 리셋 및 렌더링
       document.getElementById('cardForm').reset();
       document.getElementById('user').value = user;
       document.getElementById('date').value = date;
       document.getElementById('desc').value = desc;
       document.getElementById('pro').value = pro;
-    //   document.getElementById("ocrYes").checked = includeOCR;
-    //   document.getElementById("ocrNo").checked = ocrNo;  
 
       base64ImageData = "";
 
@@ -340,9 +160,6 @@
       preview.src = '';
       preview.style.display = 'none';
       previewText.style.display = 'block';
-
-      // OCR 텍스트 초기화 (div일 경우)
-    //   document.getElementById('phototext').textContent = '';
 
       renderHistory();
     };
@@ -365,31 +182,19 @@
 
     try {
       const history = await getAllRecords();
-    //   const includeOCR = document.getElementById("ocrYes").checked;  
+
       history.forEach((r) => {
         const wrapper = document.createElement('div');
         wrapper.className = 'border p-2 mb-2 d-flex justify-content-between align-items-center';
-         
-        const left = document.createElement('div');
-        // const ocrLine = includeOCR
-        // ? `명세서 내용(OCR): ${r.ocrText||'없음'}<br>`
-        // : '명세서 내용(OCR): 미첨부';
 
-        // left.innerHTML = `
-        //   <b>${r.user}</b> (${r.date})<br>
-        //   내역: ${r.desc}<br>
-        //   프로젝트: ${r.pro}<br>
-        //   금액: ${r.amount}원<br>
-        //   ${ocrLine}<br>
-        //   <img src="${r.photo}" style="max-width:100px; max-height:80px; margin-top:5px;">
-        // `;
+        const left = document.createElement('div');
         left.innerHTML = `
           <b>${r.user}</b> (${r.date})<br>
           내역: ${r.desc}<br>
           프로젝트: ${r.pro}<br>
           <img src="${r.photo}" style="max-width:100px; max-height:80px; margin-top:5px;">
         `;
-       
+
         const delBtn = document.createElement('button');
         delBtn.className = 'btn btn-sm btn-danger ms-2';
         delBtn.textContent = '삭제';
@@ -422,62 +227,14 @@
     tx.onerror = () => alert('초기화 실패');
   }
 
-//   async function sendAllMail() {
-//     await exportPDF();
-
-//     const user = document.getElementById('user').value;
-//     const history = await getAllRecords();
-//     if (history.length === 0) return alert("저장된 내역이 없습니다.");
-
-//     // let body = ``;
-//     // history.forEach((r, i) => {
-//     //     body += `#${i + 1}\t사용자: ${r.user}\t날짜: ${r.date}\t내역: ${r.desc}\t프로젝트: ${r.pro}\t금액: ${r.amount}원\n`;
-//     // });
-//     let body = 'No.,날짜,사용자,프로젝트,내역,금액\r\n';
-//     history.forEach((r, i) => {
-//       // body += `#${i + 1}\t사용자: ${r.user}\t날짜: ${r.date}\t내역: ${r.desc}\t프로젝트: ${r.pro}\t금액: ${r.amount}원\n`;
-//     //   const amount = r.amount.toString().replace(/,/g, ''); // 쉼표 제거
-//     //   body += `#${i + 1},${r.date},${r.user},${r.pro},${r.desc},${amount}\r\n`;
-//       body += `#${i + 1},${r.date},${r.user},${r.pro},${r.desc}\r\n`;
-//     });
-//     const to = 'dw.jung@iksrnd.com';
-//     const subject = encodeURIComponent(`법인카드내역(${user})`);
-//     const bodyEncoded = encodeURIComponent(body);
-//     location.href = `mailto:${to}?subject=${subject}&body=${bodyEncoded}`;
-//   }
-  // function createTextImage(textLines, width = 200, fontSize = 6, lineHeight = 12, padding = 10) {
-  //   const height = padding * 2 + lineHeight * textLines.length;
-  //   const scale = 2;  // 고해상도
-  //   const canvas = document.createElement("canvas");
-  //   canvas.width = width * scale;
-  //   canvas.height = height * scale;
-
-  //   const ctx = canvas.getContext("2d");
-  //   ctx.scale(scale, scale);
-
-  //   ctx.fillStyle = "#fff";
-  //   ctx.fillRect(0, 0, width, height);
-  //   ctx.fillStyle = "#000";
-  //   // ctx.font = `bold ${fontSize}px sans-serif`;
-  //   ctx.font = `normal ${fontSize}px sans-serif`;
-  //   ctx.textBaseline = "top";
-
-  //   textLines.forEach((line, i) => {
-  //     ctx.fillText(line, padding, padding + lineHeight * i);
-  //   });
-
-  //   return canvas.toDataURL("image/png");
-  // }
   function createTextImage(textLines, width = 200, fontSize = 10, lineHeight = 12, padding = 10) {
     const scale = 2;  // 고해상도용 스케일
     const ctxFont = `${fontSize}px sans-serif`;
 
-    // 캔버스 임시 생성 및 컨텍스트 얻기
     const tempCanvas = document.createElement("canvas");
     const tempCtx = tempCanvas.getContext("2d");
     tempCtx.font = ctxFont;
 
-    // 줄바꿈 후 실제 출력할 모든 텍스트 라인 배열 만들기
     const wrappedLines = [];
 
     textLines.forEach(line => {
@@ -498,10 +255,8 @@
       if (currentLine) wrappedLines.push(currentLine);
     });
 
-    // 캔버스 높이 계산 (패딩 + 줄 수 * 줄 높이)
     const height = padding * 2 + wrappedLines.length * lineHeight;
 
-    // 실제 캔버스 생성
     const canvas = document.createElement("canvas");
     canvas.width = width * scale;
     canvas.height = height * scale;
@@ -515,7 +270,6 @@
     ctx.font = ctxFont;
     ctx.textBaseline = "top";
 
-    // 줄 단위 텍스트 출력
     wrappedLines.forEach((line, i) => {
       ctx.fillText(line, padding, padding + i * lineHeight);
     });
@@ -523,25 +277,12 @@
     return canvas.toDataURL("image/png");
   }
 
-  function fixImageOrientation(img, callback) {
-    // img: HTMLImageElement 로드된 이미지
-
-    // 임시 캔버스 생성
+  // 이미지 90도 회전 후 jsPDF에 추가하는 함수
+  function addRotatedImage(doc, imgData, x, y, width, height, rotation = 90) {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
 
-    // 이미지 폭/높이
-    let width = img.naturalWidth;
-    let height = img.naturalHeight;
-
-    // EXIF Orientation 읽기 (Tesseract.js나 다른 라이브러리, 또는 exif-js 등 사용 가능)
-    // 여기서는 간단히 1번 (정상)으로 가정
-    let orientation = 1; 
-
-    // TODO: 실제 EXIF orientation값을 읽어서 아래 조건에 맞게 처리하세요.
-
-    // orientation 값에 따른 캔버스 크기 조정과 회전
-    if (orientation > 4) {
+    if (rotation % 180 === 90) {
       canvas.width = height;
       canvas.height = width;
     } else {
@@ -549,57 +290,28 @@
       canvas.height = height;
     }
 
-    switch (orientation) {
-      case 2:
-        // horizontal flip
-        ctx.translate(width, 0);
-        ctx.scale(-1, 1);
-        break;
-      case 3:
-        // 180° rotate left
-        ctx.translate(width, height);
-        ctx.rotate(Math.PI);
-        break;
-      case 4:
-        // vertical flip
-        ctx.translate(0, height);
-        ctx.scale(1, -1);
-        break;
-      case 5:
-        // vertical flip + 90 rotate right
-        ctx.rotate(0.5 * Math.PI);
-        ctx.scale(1, -1);
-        break;
-      case 6:
-        // 90° rotate right
-        ctx.rotate(0.5 * Math.PI);
-        ctx.translate(0, -height);
-        break;
-      case 7:
-        // horizontal flip + 90 rotate right
-        ctx.rotate(0.5 * Math.PI);
-        ctx.translate(width, -height);
-        ctx.scale(-1, 1);
-        break;
-      case 8:
-        // 90° rotate left
-        ctx.rotate(-0.5 * Math.PI);
-        ctx.translate(-width, 0);
-        break;
-      default:
-        break;
-    }
+    const img = new Image();
+    img.src = imgData;
 
-    ctx.drawImage(img, 0, 0);
+    return new Promise((resolve) => {
+      img.onload = () => {
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.rotate((rotation * Math.PI) / 180);
+        ctx.drawImage(img, -width / 2, -height / 2, width, height);
 
-    callback(canvas.toDataURL());
+        const rotatedDataUrl = canvas.toDataURL('image/jpeg');
+
+        doc.addImage(rotatedDataUrl, 'JPEG', x, y, canvas.width, canvas.height);
+
+        resolve();
+      };
+    });
   }
 
   async function sendAllMail() {
     const history = await getAllRecords();
     if (history.length === 0) return alert("저장된 내역이 없습니다.");
 
-    // CSV 생성
     let csvContent = 'No.,날짜,사용자,프로젝트,내역\r\n';
     history.forEach((r, i) => {
       const row = [
@@ -623,7 +335,6 @@
     const csvBlob = new Blob([utf8Bom + csvContent], { type: "text/csv;charset=utf-8" });
     const csvFile = new File([csvBlob], csvFileName, { type: "text/csv" });
 
-    // PDF 생성
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -631,7 +342,7 @@
 
     const imgWidth = 60;
     const imgHeight = 90;
-    const textImgWidth = 120;  // 오른쪽 텍스트 이미지 넓이
+    const textImgWidth = 120;
     const textImgHeight = 60;
     const marginX = 10;
     const marginY = 10;
@@ -651,115 +362,71 @@
         `내역: ${r.desc}`
       ];
 
-      // 텍스트 이미지 생성 (width 파라미터 추가)
       const textImage = createTextImage(lines, textImgWidth, 6, 14);
-
-      // 한 행 높이는 이미지 높이 중 큰 쪽으로 설정
       const rowHeight = Math.max(imgHeight, textImgHeight);
 
-      // 페이지 하단 공간 체크
       if (y + rowHeight > pageHeight - marginY) {
         doc.addPage();
         y = marginY;
       }
 
-      // 사진 왼쪽에 추가
       if (r.photo) {
         try {
-          const imgElement = new Image();
-          imgElement.onload = () => {
-            fixImageOrientation(imgElement, (fixedBase64) => {
-              doc.addImage(fixedBase64, 'JPEG', x, y, imgWidth, imgHeight);
-            });
-          };
-          imgElement.src = r.photo;
+          await addRotatedImage(doc, r.photo, x, y, imgWidth, imgHeight, 90);
         } catch (e) {
           console.warn(`이미지 추가 실패: ${e}`);
         }
       }
 
-      // 텍스트 이미지 오른쪽에 추가
       doc.addImage(textImage, 'PNG', x + imgWidth + gapX, y, textImgWidth, textImgHeight);
 
-      // 다음 행으로 Y 좌표 이동
       y += rowHeight + gapY;
     }
 
     const pdfFileName = `법인카드사진_${dateStr}.pdf`;
-    const pdfBlob = doc.output("blob");
+    const pdfBlob = doc.output('blob');
+
+    // 파일 저장 & 메일 첨부 시나리오 (파일 객체 생성)
     const pdfFile = new File([pdfBlob], pdfFileName, { type: "application/pdf" });
 
-    // 공유 시도
-    if (navigator.canShare && navigator.canShare({ files: [pdfFile, csvFile] })) {
-      try {
-        await navigator.share({
-          files: [pdfFile, csvFile],
-          title: "법인카드 자료",
-          text: "PDF(사진+텍스트)와 CSV(내역) 파일입니다."
-        });
-      } catch (err) {
-        alert("공유가 취소되었거나 실패했습니다.");
-      }
-    } else {
-      // fallback: 다운로드
-      const a1 = document.createElement("a");
-      a1.href = URL.createObjectURL(pdfBlob);
-      a1.download = pdfFileName;
-      a1.click();
+    // 여기에서 서버에 파일 전송 또는 메일 전송 함수 호출 가능
+    alert("PDF 생성 완료 (서버 전송 코드 필요)");
 
-      const a2 = document.createElement("a");
-      a2.href = URL.createObjectURL(csvBlob);
-      a2.download = csvFileName;
-      a2.click();
-
-      alert("공유가 불가능한 환경입니다. PDF와 CSV가 저장되었습니다.");
-    }
+    // 예시: 다운로드 링크 생성
+    /*
+    const url = URL.createObjectURL(pdfBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = pdfFileName;
+    a.click();
+    URL.revokeObjectURL(url);
+    */
   }
 
-
-
-  window.onload = async () => {
+  // 페이지 로드 시 DB 열고, 히스토리 렌더링
+  (async () => {
     await openDB();
 
+    // 로컬 저장된 선택 사용자 복원
     const savedUser = localStorage.getItem('selectedUser');
-    const userSelect = document.getElementById('user');
+    if (savedUser) document.getElementById('user').value = savedUser;
+
+    // 이전에 입력했던 내역 복원
     const wdesc = localStorage.getItem('wdesc');
+    if (wdesc) document.getElementById('desc').value = wdesc;
     const wpro = localStorage.getItem('wpro');
-
-    // document.getElementById('desc') = localStorage.getItem('wdesc');
-    // document.getElementById('wpro') = localStorage.getItem('wpro');
-
-    if (savedUser && [...userSelect.options].some(opt => opt.value === savedUser)) {
-      userSelect.value = savedUser;
-    } 
-    else {
-      userSelect.value = '';
-    }
-    if (wdesc) {
-      document.getElementById('desc').value = wdesc;
-    } 
-    else {
-      document.getElementById('desc').value = '';
-    }
-    if (wpro) {
-      document.getElementById('pro').value = wpro;
-    } 
-    else {
-      document.getElementById('pro').value = '';
-    }
-
-
-
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const dd = String(today.getDate()).padStart(2, '0');
-    const formattedDate = `${yyyy}-${mm}-${dd}`;
-    document.getElementById('date').value = formattedDate;
+    if (wpro) document.getElementById('pro').value = wpro;
 
     renderHistory();
-  };
-//   document.getElementById("ocrYes").checked  = true;
+  })();
+
+  function showChoice() {
+    if (confirm("사진을 촬영하시겠습니까?\n취소하면 갤러리에서 선택합니다.")) {
+      document.getElementById('cameraInput').click();
+    } else {
+      document.getElementById('galleryInput').click();
+    }
+  }
 </script>
 </body>
 </html>
