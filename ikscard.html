@@ -22,7 +22,7 @@
 </head>
 <body class="bg-light">
 <div class="container py-4">
-  <h2 class="text-center mb-4">법인카드 내역(v1.2)</h2>
+  <h2 class="text-center mb-4">법인카드 내역(v1.1)</h2>
 
   <form id="cardForm" onsubmit="event.preventDefault(); addRecord();" class="mx-auto" style="max-width:480px;">
     <div class="mb-3">
@@ -382,7 +382,7 @@
           // doc.addImage(r.photo, 'JPEG', x, y, imgWidth, imgHeight);
             doc.addImage(
                 r.photo, 'JPEG',
-                x - imgHeight,  // x 좌표에 imgHeight를 더해줌 (회전된 이미지 가로 길이만큼 오른쪽 이동)
+                x + imgHeight * 0.1,  // x 좌표에 imgHeight를 더해줌 (회전된 이미지 가로 길이만큼 오른쪽 이동)
                 y,
                 imgHeight,      // 회전되었으므로 너비 = 원래 높이
                 imgWidth,       // 회전되었으므로 높이 = 원래 너비
