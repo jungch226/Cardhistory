@@ -404,10 +404,11 @@
     const pdfBlob = doc.output("blob");
     const pdfFile = new File([pdfBlob], pdfFileName, { type: "application/pdf" });
 
-    if (navigator.canShare && navigator.canShare({ files: [pdfFile, csvFile] })) {
+    //if (navigator.canShare && navigator.canShare({ files: [pdfFile, csvFile] })) {
+    if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
       try {
         await navigator.share({
-          files: [pdfFile, csvFile],
+          files: [pdfFile],
           title: "법인카드 내역",
           text: `법인카드 내역 공유 (${dateStr})`
         });
