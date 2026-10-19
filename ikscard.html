@@ -1,465 +1,60 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>법인카드 내역</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.1/dist/tesseract.min.js"></script>
 
-  <style>
-    #previewBox {
-      width: 100%; max-width: 300px; height: 180px;
-      border: 2px dashed #ced4da; border-radius: 8px;
-      display: flex; justify-content: center; align-items: center;
-      background-color: #f8f9fa; color: #6c757d;
-      overflow: hidden; margin-top: 0.5rem;
-    }
-    #previewBox img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 6px; display: none; }
-  </style>
-</head>
-<body class="bg-light">
-<div class="container py-4">
-  <h2 class="text-center mb-4">법인카드 내역(v1.8)</h2>
+async function previewImage(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-  <form id="cardForm" onsubmit="event.preventDefault(); addRecord();" class="mx-auto" style="max-width:480px;">
-    <div class="mb-3">
-      <label for="user" class="form-label">사용자</label>
-      <select id="user" class="form-select"  required onchange="saveSelectedUser()">
-        <option value="" >선택하세요</option>
-        <option value="김동혁">김동혁</option>
-        <option value="신경용">신경용</option>
-        <option value="정재원">정재원</option>
-        <option value="이주홍">이주홍</option>
-        <option value="정채호">정채호</option>
-        <option value="김현재">김현재</option>
-        <option value="조성원">조성원</option>
-        <option value="문성인">문성인</option>
-        <option value="현혜영">현혜영</option>
-        <option value="변지호">변지호</option>
-      </select>
-    </div>
-    <div class="mb-3">
-      <label for="desc" class="form-label">내역</label>
-      <input type="text" id="desc" class="form-control" placeholder="예: 식비(정채호)" required>
-    </div>
-    <div class="mb-3">
-      <label for="pro" class="form-label">프로젝트</label>
-      <input type="text" id="pro" class="form-control" placeholder="예: 순천 POSCO 형상 모니터링" required>
-    </div>
-    <div class="mb-3">
-      <label for="date" class="form-label">날짜</label>
-      <input type="date" id="date" class="form-control" required>
-    </div>
-    <div class="mb-3">
-      <button type="button" class="btn btn-primary" onclick="showChoice()">사진 업로드</button>
-
-        <input 
-            type="file" 
-            id="cameraInput" 
-            accept="image/*" 
-            capture="environment" 
-            style="display: none;" 
-            onchange="previewImage(event)"
-        >
-
-        <input 
-            type="file" 
-            id="galleryInput" 
-            accept="image/*" 
-            style="display: none;" 
-            onchange="previewImage(event)"
-        >
-
-      <div id="previewBox" class="mt-2">
-        <span id="previewText">이미지 미리보기</span><br>
-        <img id="preview" alt="미리보기" style="max-width: 100%; height: auto; display: none;">
-      </div>
-    </div>
-    <div class="d-grid gap-2">
-      <button class="btn btn-success" type="submit">내역 추가</button>
-      <button class="btn btn-secondary" type="button" onclick="sendAllMail()">공유하기</button>
-      <button class="btn btn-danger" type="button" onclick="clearHistory()">히스토리 초기화</button>
-    </div>
-  </form>
-
-  <hr/>
-  <div id="historyList" class="mt-3" style="max-width:480px; margin:0 auto;"></div>
-</div>
-
-<script>
-  let db;
-  let base64ImageData = "";
-
-  function saveSelectedUser() {
-    const user = document.getElementById('user').value;
-    localStorage.setItem('selectedUser', user);
-  }
-
-  // IndexedDB 열기 및 객체 저장소 생성
-  function openDB() {
-    return new Promise((resolve, reject) => {
-      const request = indexedDB.open('CardDB', 1);
-      request.onerror = () => reject('DB 열기 실패');
-      request.onsuccess = (e) => {
-        db = e.target.result;
-        resolve();
-      };
-      request.onupgradeneeded = (e) => {
-        db = e.target.result;
-        if (!db.objectStoreNames.contains('cards')) {
-          const store = db.createObjectStore('cards', { keyPath: 'id', autoIncrement: true });
-          store.createIndex('user', 'user', { unique: false });
-        }
-      };
-    });
-  }
-
-  // 이미지 base64 미리보기 및 저장
-  function previewImage(event) {
-    const file = event.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const img = document.getElementById('preview');
-        img.src = e.target.result;
-        img.style.display = 'block';
-        document.getElementById('previewText').style.display = 'none';
-        base64ImageData = e.target.result;  // base64로 저장
-      };
-      reader.readAsDataURL(file);
-    }
-  }
-
-  // 이미지 회전 함수 (90도 시계 방향)
-  function rotateImage(base64, callback) {
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      // 세로(높이)를 가로(넓이)로, 가로를 세로로 바꿈 (90도 회전)
-      canvas.width = img.height;
-      canvas.height = img.width;
-      const ctx = canvas.getContext('2d');
-
-      // 90도 회전 후 그리기
-      ctx.translate(canvas.width / 2, canvas.height / 2);
-      // ctx.rotate(90 * Math.PI / 180);
-      ctx.drawImage(img, -img.width / 2, -img.height / 2);
-
-      const rotatedBase64 = canvas.toDataURL('image/jpeg', 0.9);
-      callback(rotatedBase64);
-    };
-    img.src = base64;
-  }
-
-  async function addRecord() {
-    const user = document.getElementById('user').value;
-    const desc = document.getElementById('desc').value;
-    const pro = document.getElementById('pro').value;
-    const date = document.getElementById('date').value;
-
-    localStorage.setItem('wdesc', desc);
-    localStorage.setItem('wpro', pro);
-
-    if (!user || !desc || !pro || !date) {
-      return alert("모든 항목을 입력해주세요");
-    }
-
-    if (!base64ImageData) {
-      // 이미지 없으면 바로 저장
-      saveRecord({ user, desc, pro, date, photo: "" });
-    } else {
-      saveRecord({ user, desc, pro, date, photo: base64ImageData });
-    }
-  }
-
-  function saveRecord(record) {
-    const tx = db.transaction('cards', 'readwrite');
-    const store = tx.objectStore('cards');
-    store.add(record);
-
-    tx.oncomplete = () => {
-      // 입력 후 폼 리셋 및 렌더링
-      document.getElementById('cardForm').reset();
-      // 사용자, 날짜, 내역, 프로젝트는 이전 값 복원
-      document.getElementById('user').value = record.user;
-      document.getElementById('date').value = record.date;
-      document.getElementById('desc').value = record.desc;
-      document.getElementById('pro').value = record.pro;
-
-      base64ImageData = "";
-
-      const preview = document.getElementById('preview');
-      const previewText = document.getElementById('previewText');
-      preview.src = '';
-      preview.style.display = 'none';
-      previewText.style.display = 'block';
-
-      renderHistory();
-    };
-    tx.onerror = () => alert("저장 중 오류가 발생했습니다.");
-  }
-
-  function getAllRecords() {
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction('cards', 'readonly');
-      const store = tx.objectStore('cards');
-      const request = store.getAll();
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject('조회 실패');
-    });
-  }
-
-  async function renderHistory() {
-    const list = document.getElementById('historyList');
-    list.innerHTML = '';
+    const MAX_SIZE = 1600;
+    const QUALITY = 0.8;
 
     try {
-      const history = await getAllRecords();
-
-      history.forEach((r) => {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'border p-2 mb-2 d-flex justify-content-between align-items-center';
-
-        const left = document.createElement('div');
-        left.innerHTML = `
-          <b>${r.user}</b> (${r.date})<br>
-          내역: ${r.desc}<br>
-          프로젝트: ${r.pro}<br>
-          <img src="${r.photo}" style="max-width:100px; max-height:80px; margin-top:5px;">
-        `;
-
-        const delBtn = document.createElement('button');
-        delBtn.className = 'btn btn-sm btn-danger ms-2';
-        delBtn.textContent = '삭제';
-        delBtn.addEventListener('click', () => deleteRecord(r.id));
-
-        wrapper.appendChild(left);
-        wrapper.appendChild(delBtn);
-        list.appendChild(wrapper);
-      });
-    } catch(e) {
-      alert("데이터 로드 중 오류가 발생했습니다.");
-    }
-  }
-
-  function deleteRecord(id) {
-    if (!confirm('정말 삭제하시겠습니까?')) return;
-    const tx = db.transaction('cards', 'readwrite');
-    const store = tx.objectStore('cards');
-    store.delete(id);
-    tx.oncomplete = () => renderHistory();
-    tx.onerror = () => alert('삭제 실패');
-  }
-
-  async function clearHistory() {
-    if (!confirm('모든 내역을 삭제하시겠습니까?')) return;
-    const tx = db.transaction('cards', 'readwrite');
-    const store = tx.objectStore('cards');
-    store.clear();
-    tx.oncomplete = () => renderHistory();
-    tx.onerror = () => alert('초기화 실패');
-  }
-
-  // 텍스트를 캔버스 이미지로 변환 (자동 줄바꿈 포함)
-  function createTextImage(textLines, width = 200, fontSize = 10, lineHeight = 14, padding = 10) {
-    const scale = 2;
-    const ctxFont = `${fontSize}px sans-serif`;
-
-    const tempCanvas = document.createElement("canvas");
-    const tempCtx = tempCanvas.getContext("2d");
-    tempCtx.font = ctxFont;
-
-    const wrappedLines = [];
-
-    textLines.forEach(line => {
-      let words = line.split(' ');
-      let currentLine = '';
-
-      for (let n = 0; n < words.length; n++) {
-        const testLine = currentLine ? currentLine + ' ' + words[n] : words[n];
-        const testWidth = tempCtx.measureText(testLine).width;
-
-        if (testWidth > width - 2 * padding) {
-          if (currentLine) wrappedLines.push(currentLine);
-          currentLine = words[n];
-        } else {
-          currentLine = testLine;
-        }
-      }
-      if (currentLine) wrappedLines.push(currentLine);
-    });
-
-    const height = padding * 2 + wrappedLines.length * lineHeight;
-
-    const canvas = document.createElement("canvas");
-    canvas.width = width * scale;
-    canvas.height = height * scale;
-    const ctx = canvas.getContext("2d");
-    ctx.scale(scale, scale);
-
-    ctx.fillStyle = "#fff";
-    ctx.fillRect(0, 0, width, height);
-
-    ctx.fillStyle = "#000";
-    ctx.font = ctxFont;
-    ctx.textBaseline = "top";
-
-    wrappedLines.forEach((line, i) => {
-      ctx.fillText(line, padding, padding + i * lineHeight);
-    });
-
-    return canvas.toDataURL("image/png");
-  }
-
-  async function sendAllMail() {
-    const history = await getAllRecords();
-    if (history.length === 0) return alert("저장된 내역이 없습니다.");
-
-    let csvContent = 'No.,날짜,사용자,프로젝트,내역\r\n';
-    history.forEach((r, i) => {
-      const row = [
-        i + 1,
-        r.date,
-        `"${r.user}"`,
-        `"${r.pro}"`,
-        `"${r.desc}"`
-      ].join(',');
-      csvContent += row + '\r\n';
-    });
-
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const dd = String(today.getDate()).padStart(2, '0');
-    const dateStr = `${yyyy}-${mm}-${dd}`;
-
-    const csvFileName = `법인카드내역_${dateStr}.csv`;
-    const utf8Bom = '\uFEFF';
-    const csvBlob = new Blob([utf8Bom + csvContent], { type: "text/csv;charset=utf-8" });
-    const csvFile = new File([csvBlob], csvFileName, { type: "text/csv" });
-
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
-
-    const imgWidth = 60;
-    const imgHeight = 90;
-    const textImgWidth = 120;
-    const textImgHeight = 60;
-    const marginX = 10;
-    const marginY = 10;
-    const gapY = 5;
-    const gapX = 5;
-
-    let x = marginX;
-    let y = marginY;
-
-    for (let i = 0; i < history.length; i++) {
-      const r = history[i];
-
-      const lines = [
-        `사용자: ${r.user}`,
-        `날짜: ${r.date}`,
-        `프로젝트: ${r.pro}`,
-        `내역: ${r.desc}`
-      ];
-
-      const textImage = createTextImage(lines, textImgWidth, 6, 14);
-
-      const rowHeight = Math.max(imgHeight, textImgHeight);
-
-      if (y + rowHeight > pageHeight - marginY) {
-        doc.addPage();
-        y = marginY;
-      }
-
-      if (r.photo) {
-        try {
-          // doc.addImage(r.photo, 'JPEG', x, y, imgWidth, imgHeight);
-            doc.addImage(
-                r.photo, 'JPEG',
-                x + 1,  
-                y - imgWidth,
-                imgHeight,      // 회전되었으므로 너비 = 원래 높이
-                imgWidth,       // 회전되었으므로 높이 = 원래 너비
-                undefined,
-                'FAST',
-                -90              // 시계 방향 90도 회전
-              );
-        } catch (e) {
-          console.warn(`이미지 추가 실패: ${e}`);
-        }
-      }
-
-      doc.addImage(textImage, 'PNG', x + imgWidth + gapX, y, textImgWidth, textImgHeight);
-
-      y += rowHeight + gapY;
-    }
-
-    const pdfFileName = `법인카드사진_${dateStr}.pdf`;
-    const pdfBlob = doc.output("blob");
-    const pdfFile = new File([pdfBlob], pdfFileName, { type: "application/pdf" });
-
-    //if (navigator.canShare && navigator.canShare({ files: [pdfFile, csvFile] })) {
-    if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
-      try {
-        await navigator.share({
-          files: [pdfFile],
-          title: "법인카드 내역",
-          text: `법인카드 내역 공유 (${dateStr})`
+        const bitmap = await createImageBitmap(file, {
+            imageOrientation: "from-image"
         });
-      } catch (e) {
-        alert("공유가 취소되었습니다.");
-      }
-    } else {
-      alert("파일 공유를 지원하지 않는 환경입니다.");
+
+        const scale = Math.min(
+            1,
+            MAX_SIZE / Math.max(bitmap.width, bitmap.height)
+        );
+
+        const width = Math.round(bitmap.width * scale);
+        const height = Math.round(bitmap.height * scale);
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(bitmap, 0, 0, width, height);
+
+        bitmap.close();
+
+        base64ImageData = canvas.toDataURL(
+            "image/jpeg",
+            QUALITY
+        );
+
+        const preview = document.getElementById("preview");
+        preview.src = base64ImageData;
+        preview.style.display = "block";
+
+        document.getElementById("previewText").style.display = "none";
+
+        const originalKB = (file.size / 1024).toFixed(0);
+        const compressedKB = (
+            base64ImageData.length * 0.75 / 1024
+        ).toFixed(0);
+
+        console.log(
+            `사진 압축: ${originalKB}KB → ${compressedKB}KB`
+        );
+
+        canvas.width = 0;
+        canvas.height = 0;
+
+    } catch (error) {
+        console.error("사진 처리 실패:", error);
+        alert("사진을 처리하지 못했습니다.");
     }
-  }
-
-  // 업로드 사진 선택 팝업
-  function showChoice() {
-    const useCamera = confirm("사진을 직접 촬영하시겠습니까? 확인: 카메라, 취소: 갤러리");
-    if (useCamera) {
-      document.getElementById('cameraInput').click();
-    } else {
-      document.getElementById('galleryInput').click();
-    }
-  }
-
-  // 페이지 로드 시 저장된 사용자 복원, 오늘 날짜 세팅, 입력값 복원 및 히스토리 렌더링
-  (async () => {
-    await openDB();
-
-    // 사용자 선택값 복원
-    const savedUser = localStorage.getItem('selectedUser');
-    if (savedUser) {
-      document.getElementById('user').value = savedUser;
-    }
-
-    // 내역, 프로젝트 복원
-    const savedDesc = localStorage.getItem('wdesc');
-    if (savedDesc) document.getElementById('desc').value = savedDesc;
-
-    const savedPro = localStorage.getItem('wpro');
-    if (savedPro) document.getElementById('pro').value = savedPro;
-
-    // 오늘 날짜 자동 세팅
-    const dateInput = document.getElementById('date');
-    if (!dateInput.value) {
-      const today = new Date();
-      const yyyy = today.getFullYear();
-      const mm = String(today.getMonth() + 1).padStart(2, '0');
-      const dd = String(today.getDate()).padStart(2, '0');
-      dateInput.value = `${yyyy}-${mm}-${dd}`;
-    }
-
-    renderHistory();
-  })();
-
-</script>
-</body>
-</html>
+}
