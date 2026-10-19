@@ -3,67 +3,150 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>법인카드 내역 v2.2</title>
+<meta name="viewport"
+      content="width=device-width, initial-scale=1,
+               viewport-fit=cover">
+<title>법인카드 내역 v2.3</title>
 
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    rel="stylesheet">
+
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
 <style>
 body {
-    background: #f8f9fa;
+    background: #f5f6f8;
 }
+
 .main {
-    max-width: 480px;
+    max-width: 520px;
     margin: auto;
 }
+
 #previewBox {
-    height: 190px;
-    max-width: 320px;
-    border: 2px dashed #ced4da;
-    border-radius: 8px;
+    width: 100%;
+    min-height: 190px;
+    border: 2px dashed #cbd5e1;
+    border-radius: 10px;
     background: white;
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
 }
+
 #preview {
     display: none;
     max-width: 100%;
-    max-height: 100%;
+    max-height: 320px;
     object-fit: contain;
 }
+
+#imageInfo {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
 .entry {
     background: white;
     border: 1px solid #ddd;
-    border-radius: 8px;
+    border-radius: 10px;
     padding: 12px;
     margin-bottom: 10px;
     overflow-wrap: anywhere;
 }
+
 .entry img {
-    max-width: 110px;
-    max-height: 110px;
-    object-fit: contain;
     display: block;
+    max-width: 130px;
+    max-height: 130px;
+    object-fit: contain;
     margin-top: 8px;
 }
-#imageInfo {
-    white-space: pre-wrap;
+
+#cameraLayer {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    background: #080808;
+    display: none;
+    flex-direction: column;
+}
+
+#cameraHeader {
+    color: white;
+    padding: 14px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #151515;
+}
+
+#cameraArea {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+#cameraVideo {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: black;
+}
+
+#cameraFooter {
+    padding: 18px 16px;
+    padding-bottom: max(18px, env(safe-area-inset-bottom));
+    background: #151515;
+    text-align: center;
+}
+
+#captureButton {
+    width: 76px;
+    height: 76px;
+    border-radius: 50%;
+    background: white;
+    border: 6px solid #999;
+    box-shadow: 0 0 0 3px white;
+}
+
+#captureButton:disabled {
+    opacity: 0.5;
+}
+
+#cameraMessage {
+    color: #ddd;
+    font-size: 13px;
+    margin-top: 12px;
+}
+
+button {
+    touch-action: manipulation;
 }
 </style>
 </head>
 
 <body>
+
 <div class="container py-4">
 
-<h2 class="text-center mb-4">법인카드 내역(v2.2)</h2>
+<h2 class="text-center mb-4">
+    법인카드 내역(v2.3)
+</h2>
 
 <form id="cardForm" class="main">
 
     <div class="mb-3">
-        <label class="form-label" for="user">사용자</label>
+        <label class="form-label" for="user">
+            사용자
+        </label>
+
         <select id="user" class="form-select" required>
             <option value="">선택하세요</option>
             <option>김동혁</option>
@@ -80,100 +163,244 @@ body {
     </div>
 
     <div class="mb-3">
-        <label class="form-label" for="desc">내역</label>
-        <input id="desc" class="form-control"
-               placeholder="예: 식비(정채호)" required>
+        <label class="form-label" for="desc">
+            내역
+        </label>
+
+        <input
+            id="desc"
+            class="form-control"
+            placeholder="예: 식비(정채호)"
+            required>
     </div>
 
     <div class="mb-3">
-        <label class="form-label" for="pro">프로젝트</label>
-        <input id="pro" class="form-control"
-               placeholder="예: 순천 POSCO 형상 모니터링" required>
+        <label class="form-label" for="pro">
+            프로젝트
+        </label>
+
+        <input
+            id="pro"
+            class="form-control"
+            placeholder="예: 순천 형상 모니터링"
+            required>
     </div>
 
     <div class="mb-3">
-        <label class="form-label" for="date">날짜</label>
-        <input type="date" id="date" class="form-control" required>
+        <label class="form-label" for="date">
+            날짜
+        </label>
+
+        <input
+            type="date"
+            id="date"
+            class="form-control"
+            required>
     </div>
 
     <div class="mb-3">
-        <button id="photoButton" type="button"
-                class="btn btn-primary mb-2">
-            사진 업로드
-        </button>
 
-        <input id="cameraInput" type="file"
-               accept="image/*" capture="environment" hidden>
+        <div class="d-flex gap-2 mb-2">
 
-        <input id="galleryInput" type="file"
-               accept="image/*" hidden>
+            <button
+                type="button"
+                id="openCameraButton"
+                class="btn btn-primary flex-fill">
+                카메라 촬영
+            </button>
 
-        <div id="previewBox">
-            <span id="previewText">이미지 미리보기</span>
-            <img id="preview" alt="사진 미리보기">
+            <button
+                type="button"
+                id="galleryButton"
+                class="btn btn-outline-primary flex-fill">
+                갤러리
+            </button>
+
         </div>
 
-        <small id="imageInfo"
-               class="text-muted d-block mt-2"
-               aria-live="polite"></small>
+        <input
+            type="file"
+            id="galleryInput"
+            accept="image/*"
+            hidden>
+
+        <div id="previewBox">
+            <span id="previewText" class="text-muted">
+                이미지 미리보기
+            </span>
+
+            <img
+                id="preview"
+                alt="영수증 미리보기">
+        </div>
+
+        <small
+            id="imageInfo"
+            class="text-muted d-block mt-2"
+            aria-live="polite">
+        </small>
+
+        <button
+            type="button"
+            id="removePhotoButton"
+            class="btn btn-sm btn-outline-danger mt-2"
+            style="display:none">
+            사진 제거
+        </button>
+
     </div>
 
     <div class="d-grid gap-2">
-        <button id="addButton" class="btn btn-success"
-                type="submit">내역 추가</button>
 
-        <button id="shareButton" class="btn btn-secondary"
-                type="button">공유하기 (PDF)</button>
+        <button
+            type="submit"
+            id="addButton"
+            class="btn btn-success">
+            내역 추가
+        </button>
 
-        <button id="csvButton" class="btn btn-outline-secondary"
-                type="button">CSV 다운로드</button>
+        <button
+            type="button"
+            id="shareButton"
+            class="btn btn-secondary">
+            공유하기 (PDF)
+        </button>
 
-        <button id="clearButton" class="btn btn-danger"
-                type="button">히스토리 초기화</button>
+        <button
+            type="button"
+            id="csvButton"
+            class="btn btn-outline-secondary">
+            CSV 다운로드
+        </button>
+
+        <button
+            type="button"
+            id="clearButton"
+            class="btn btn-danger">
+            히스토리 초기화
+        </button>
+
     </div>
 
 </form>
 
 <hr>
+
 <div id="historyList" class="main"></div>
+
+</div>
+
+<!-- 웹페이지 내부 카메라 -->
+
+<div id="cameraLayer">
+
+    <div id="cameraHeader">
+        <strong>영수증 촬영</strong>
+
+        <button
+            type="button"
+            id="closeCameraButton"
+            class="btn btn-outline-light btn-sm">
+            닫기
+        </button>
+    </div>
+
+    <div id="cameraArea">
+        <video
+            id="cameraVideo"
+            autoplay
+            playsinline
+            muted>
+        </video>
+    </div>
+
+    <div id="cameraFooter">
+
+        <button
+            type="button"
+            id="captureButton"
+            aria-label="사진 촬영">
+        </button>
+
+        <div id="cameraMessage">
+            영수증을 화면에 맞춘 후 촬영하세요.
+        </div>
+
+    </div>
+
 </div>
 
 <script>
 "use strict";
 
 // ========================================
-// 기본 설정
+// 설정
 // ========================================
 
 const $ = id => document.getElementById(id);
 
-const MAX_SIDE = 1600;
-const QUALITY = 0.8;
+const DB_NAME = "CardDB";
+const DB_VERSION = 1;
+const STORE_NAME = "cards";
 
-let db;
+const MAX_IMAGE_SIDE = 1600;
+const JPEG_QUALITY = 0.78;
+
+let db = null;
+
+let cameraStream = null;
+let cameraBusy = false;
+
 let photoBlob = null;
 let previewURL = null;
-let historyURLs = [];
 
 let photoBusy = false;
 let saveBusy = false;
 let photoToken = 0;
 
+let historyURLs = [];
+
 // ========================================
 // 공통 함수
 // ========================================
 
-const day = () => {
+function today() {
     const d = new Date();
 
-    return `${d.getFullYear()}-${String(
-        d.getMonth() + 1
-    ).padStart(2, "0")}-${String(
-        d.getDate()
-    ).padStart(2, "0")}`;
-};
+    return [
+        d.getFullYear(),
+        String(d.getMonth() + 1).padStart(2, "0"),
+        String(d.getDate()).padStart(2, "0")
+    ].join("-");
+}
 
-const kb = n => `${Math.round(n / 1024)}KB`;
+function formatSize(bytes) {
+    if (bytes < 1024 * 1024) {
+        return `${(bytes / 1024).toFixed(0)} KB`;
+    }
+
+    return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
+}
+
+function setImageInfo(message, error = false) {
+    const el = $("imageInfo");
+
+    el.textContent = message;
+    el.className =
+        "d-block mt-2 " +
+        (error ? "text-danger" : "text-muted");
+}
+
+function updateAddButton() {
+    $("addButton").disabled =
+        photoBusy || saveBusy;
+}
+
+function sleep(ms) {
+    return new Promise(resolve =>
+        setTimeout(resolve, ms)
+    );
+}
 
 // ========================================
 // IndexedDB
@@ -181,56 +408,110 @@ const kb = n => `${Math.round(n / 1024)}KB`;
 
 function openDB() {
     return new Promise((resolve, reject) => {
-        const r = indexedDB.open("CardDB", 1);
+        const request = indexedDB.open(
+            DB_NAME,
+            DB_VERSION
+        );
 
-        r.onupgradeneeded = () => {
-            const d = r.result;
+        request.onupgradeneeded = () => {
+            const database = request.result;
 
-            if (!d.objectStoreNames.contains("cards")) {
-                const s = d.createObjectStore("cards", {
-                    keyPath: "id",
-                    autoIncrement: true
-                });
+            if (!database.objectStoreNames.contains(
+                STORE_NAME
+            )) {
+                const store =
+                    database.createObjectStore(
+                        STORE_NAME,
+                        {
+                            keyPath: "id",
+                            autoIncrement: true
+                        }
+                    );
 
-                s.createIndex("user", "user", {
-                    unique: false
-                });
+                store.createIndex(
+                    "user",
+                    "user",
+                    { unique: false }
+                );
             }
         };
 
-        r.onsuccess = () => {
-            db = r.result;
+        request.onsuccess = () => {
+            db = request.result;
             resolve();
         };
 
-        r.onerror = () => reject(r.error);
+        request.onerror = () => {
+            reject(request.error);
+        };
     });
 }
 
-function dbOp(mode, action) {
+function dbOperation(mode, callback) {
     return new Promise((resolve, reject) => {
-        const tx = db.transaction("cards", mode);
-        const r = action(tx.objectStore("cards"));
+        const transaction = db.transaction(
+            STORE_NAME,
+            mode
+        );
 
-        let value;
+        const store =
+            transaction.objectStore(STORE_NAME);
 
-        r.onsuccess = () => {
-            value = r.result;
+        const request = callback(store);
+
+        let result;
+
+        request.onsuccess = () => {
+            result = request.result;
         };
 
-        tx.oncomplete = () => resolve(value);
-        tx.onerror = () => reject(tx.error);
-        tx.onabort = () => reject(
-            tx.error || Error("DB 취소")
-        );
+        transaction.oncomplete = () => {
+            resolve(result);
+        };
+
+        transaction.onerror = () => {
+            reject(transaction.error);
+        };
+
+        transaction.onabort = () => {
+            reject(
+                transaction.error ||
+                Error("DB 작업 취소")
+            );
+        };
     });
 }
 
-const records = () =>
-    dbOp("readonly", s => s.getAll());
+function getRecords() {
+    return dbOperation(
+        "readonly",
+        store => store.getAll()
+    );
+}
+
+function addDB(record) {
+    return dbOperation(
+        "readwrite",
+        store => store.add(record)
+    );
+}
+
+function deleteDB(id) {
+    return dbOperation(
+        "readwrite",
+        store => store.delete(id)
+    );
+}
+
+function clearDB() {
+    return dbOperation(
+        "readwrite",
+        store => store.clear()
+    );
+}
 
 // ========================================
-// 사진 초기화
+// 사진 관리
 // ========================================
 
 function revokePreview() {
@@ -242,6 +523,7 @@ function revokePreview() {
 
 function clearPhoto() {
     photoToken++;
+
     photoBlob = null;
     photoBusy = false;
 
@@ -254,93 +536,270 @@ function clearPhoto() {
 
     revokePreview();
 
-    $("imageInfo").textContent = "";
-
-    $("cameraInput").value = "";
     $("galleryInput").value = "";
 
-    $("addButton").disabled = saveBusy;
+    $("removePhotoButton").style.display = "none";
+
+    setImageInfo("");
+
+    updateAddButton();
+}
+
+function showPhoto(blob, message) {
+    if (!(blob instanceof Blob)) {
+        throw Error("유효하지 않은 이미지입니다.");
+    }
+
+    const url = URL.createObjectURL(blob);
+
+    const img = $("preview");
+
+    img.onload = null;
+    img.onerror = null;
+
+    img.src = url;
+    img.style.display = "block";
+
+    $("previewText").style.display = "none";
+
+    revokePreview();
+
+    previewURL = url;
+    photoBlob = blob;
+
+    $("removePhotoButton").style.display =
+        "inline-block";
+
+    setImageInfo(message);
 }
 
 // ========================================
-// 이미지 로딩
+// Canvas → JPEG Blob
 // ========================================
 
-function loadImageURL(url) {
+function canvasToJPEG(canvas) {
     return new Promise((resolve, reject) => {
-        const img = new Image();
+        canvas.toBlob(
+            blob => {
+                if (!blob) {
+                    reject(Error("JPEG 생성 실패"));
+                    return;
+                }
 
-        img.onload = () => resolve(img);
+                if (blob.type !== "image/jpeg") {
+                    reject(Error("JPEG 변환 미지원"));
+                    return;
+                }
 
-        img.onerror = () => reject(
-            Error("브라우저가 사진 형식을 읽지 못했습니다.")
+                resolve(blob);
+            },
+            "image/jpeg",
+            JPEG_QUALITY
         );
-
-        img.src = url;
     });
 }
 
 // ========================================
-// 이미지 압축
+// 카메라 시작
 // ========================================
 
-async function imageToJpeg(file) {
-    let bitmap = null;
-    let url = null;
+async function openCamera() {
+    if (cameraBusy || cameraStream) return;
+
+    if (!window.isSecureContext) {
+        alert(
+            "카메라는 HTTPS 환경에서 실행해야 합니다.\n" +
+            "GitHub Pages 주소로 접속해주세요."
+        );
+        return;
+    }
+
+    if (!navigator.mediaDevices ||
+        !navigator.mediaDevices.getUserMedia) {
+        alert(
+            "현재 브라우저에서 웹 카메라를 지원하지 않습니다.\n" +
+            "갤럭시 Chrome 또는 Samsung Internet을 이용해주세요."
+        );
+        return;
+    }
+
+    cameraBusy = true;
+
+    $("openCameraButton").disabled = true;
+    $("cameraLayer").style.display = "flex";
+    $("captureButton").disabled = true;
+
+    $("cameraMessage").textContent =
+        "카메라를 연결하고 있습니다...";
+
+    try {
+        // 갤럭시 후면 카메라 요청
+        // 고해상도 사진 모드가 아니라
+        // 저해상도 영상 스트림을 사용
+        const constraints = {
+            audio: false,
+            video: {
+                facingMode: {
+                    ideal: "environment"
+                },
+                width: {
+                    ideal: 1280
+                },
+                height: {
+                    ideal: 960
+                },
+                frameRate: {
+                    ideal: 15,
+                    max: 30
+                }
+            }
+        };
+
+        cameraStream =
+            await navigator.mediaDevices.getUserMedia(
+                constraints
+            );
+
+        const video = $("cameraVideo");
+
+        video.srcObject = cameraStream;
+
+        await video.play();
+
+        // 실제 프레임 준비 대기
+        const start = Date.now();
+
+        while (
+            (!video.videoWidth || !video.videoHeight) &&
+            Date.now() - start < 5000
+        ) {
+            await sleep(100);
+        }
+
+        if (!video.videoWidth || !video.videoHeight) {
+            throw Error("카메라 영상이 준비되지 않았습니다.");
+        }
+
+        const track =
+            cameraStream.getVideoTracks()[0];
+
+        const settings = track.getSettings();
+
+        console.log("카메라 설정:", settings);
+
+        $("cameraMessage").textContent =
+            `촬영 준비 완료 (${video.videoWidth}×` +
+            `${video.videoHeight})`;
+
+        $("captureButton").disabled = false;
+
+    } catch (error) {
+        console.error("카메라 오류:", error);
+
+        closeCamera();
+
+        let message = error.message;
+
+        if (
+            error.name === "NotAllowedError" ||
+            error.name === "PermissionDeniedError"
+        ) {
+            message =
+                "카메라 권한이 거부되었습니다.\n" +
+                "브라우저의 사이트 카메라 권한을 허용해주세요.";
+        }
+
+        if (
+            error.name === "NotFoundError" ||
+            error.name === "OverconstrainedError"
+        ) {
+            message =
+                "사용 가능한 카메라를 찾지 못했습니다.";
+        }
+
+        if (error.name === "NotReadableError") {
+            message =
+                "다른 앱에서 카메라를 사용 중일 수 있습니다.\n" +
+                "기본 카메라 앱을 종료하고 다시 시도해주세요.";
+        }
+
+        alert("카메라 실행 실패\n" + message);
+
+    } finally {
+        cameraBusy = false;
+        $("openCameraButton").disabled = false;
+    }
+}
+
+// ========================================
+// 카메라 종료
+// ========================================
+
+function closeCamera() {
+    const video = $("cameraVideo");
+
+    video.pause();
+    video.srcObject = null;
+
+    if (cameraStream) {
+        cameraStream.getTracks().forEach(track => {
+            track.stop();
+        });
+
+        cameraStream = null;
+    }
+
+    $("cameraLayer").style.display = "none";
+    $("captureButton").disabled = false;
+}
+
+// ========================================
+// 사진 촬영
+// ========================================
+
+async function capturePhoto() {
+    if (!cameraStream || photoBusy) return;
+
+    const video = $("cameraVideo");
+
+    if (!video.videoWidth || !video.videoHeight) {
+        alert("카메라 영상이 준비되지 않았습니다.");
+        return;
+    }
+
+    photoBusy = true;
+    $("captureButton").disabled = true;
+
+    updateAddButton();
+
     let canvas = null;
 
     try {
-        let source;
-
-        const mime = file.type || "알 수 없음";
-
-        // 갤럭시 고해상도 사진 축소 디코딩 시도
-        if (typeof createImageBitmap === "function") {
-            try {
-                const probe = await createImageBitmap(file, {
-                    imageOrientation: "from-image",
-                    resizeWidth: MAX_SIDE,
-                    resizeQuality: "high"
-                });
-
-                if (probe.width > 0 && probe.height > 0) {
-                    bitmap = probe;
-                    source = probe;
-                }
-            } catch (e) {
-                console.warn("축소 디코딩 미지원:", e);
-            }
-        }
-
-        // ImageBitmap 실패 시 일반 이미지 로딩
-        if (!source) {
-            url = URL.createObjectURL(file);
-            source = await loadImageURL(url);
-        }
-
-        const w = source.naturalWidth || source.width;
-        const h = source.naturalHeight || source.height;
-
-        if (!w || !h) {
-            throw Error("사진 해상도 확인 실패");
-        }
+        const sourceW = video.videoWidth;
+        const sourceH = video.videoHeight;
 
         const scale = Math.min(
             1,
-            MAX_SIDE / Math.max(w, h)
+            MAX_IMAGE_SIDE / Math.max(
+                sourceW,
+                sourceH
+            )
         );
 
         const width = Math.max(
             1,
-            Math.round(w * scale)
+            Math.round(sourceW * scale)
         );
 
         const height = Math.max(
             1,
-            Math.round(h * scale)
+            Math.round(sourceH * scale)
         );
 
+        // 원본 고해상도 파일 생성 없이
+        // 영상 프레임을 바로 JPEG로 저장
         canvas = document.createElement("canvas");
+
         canvas.width = width;
         canvas.height = height;
 
@@ -349,37 +808,169 @@ async function imageToJpeg(file) {
         });
 
         if (!ctx) {
-            throw Error("이미지 캔버스 생성 실패");
+            throw Error("Canvas 생성 실패");
+        }
+
+        ctx.drawImage(
+            video,
+            0,
+            0,
+            width,
+            height
+        );
+
+        const blob = await canvasToJPEG(canvas);
+
+        // 카메라를 먼저 종료해 메모리 반환
+        closeCamera();
+
+        clearPhoto();
+
+        showPhoto(
+            blob,
+            `촬영 완료: ${width}×${height} / ` +
+            `${formatSize(blob.size)}`
+        );
+
+    } catch (error) {
+        console.error("촬영 실패:", error);
+
+        alert(
+            "사진 촬영 실패\n" +
+            error.message
+        );
+
+    } finally {
+        if (canvas) {
+            canvas.width = 0;
+            canvas.height = 0;
+        }
+
+        photoBusy = false;
+
+        $("captureButton").disabled = false;
+
+        updateAddButton();
+    }
+}
+
+// ========================================
+// 갤러리 이미지 로딩
+// ========================================
+
+function loadImage(url) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+
+        img.onload = () => resolve(img);
+
+        img.onerror = () => reject(
+            Error("이미지를 읽지 못했습니다.")
+        );
+
+        img.src = url;
+    });
+}
+
+// ========================================
+// 갤러리 이미지 압축
+// ========================================
+
+async function compressGalleryImage(file) {
+    let url = null;
+    let canvas = null;
+    let bitmap = null;
+
+    try {
+        let source;
+
+        // 브라우저가 지원하면 축소 디코딩
+        if (typeof createImageBitmap === "function") {
+            try {
+                bitmap = await createImageBitmap(
+                    file,
+                    {
+                        imageOrientation: "from-image",
+                        resizeWidth: MAX_IMAGE_SIDE,
+                        resizeQuality: "high"
+                    }
+                );
+
+                source = bitmap;
+
+            } catch (error) {
+                console.warn(
+                    "ImageBitmap 실패, 일반 로딩:",
+                    error
+                );
+            }
+        }
+
+        if (!source) {
+            url = URL.createObjectURL(file);
+            source = await loadImage(url);
+        }
+
+        const sw =
+            source.naturalWidth || source.width;
+
+        const sh =
+            source.naturalHeight || source.height;
+
+        if (!sw || !sh) {
+            throw Error("이미지 크기 확인 실패");
+        }
+
+        const scale = Math.min(
+            1,
+            MAX_IMAGE_SIDE / Math.max(sw, sh)
+        );
+
+        const width = Math.max(
+            1,
+            Math.round(sw * scale)
+        );
+
+        const height = Math.max(
+            1,
+            Math.round(sh * scale)
+        );
+
+        canvas = document.createElement("canvas");
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext("2d", {
+            alpha: false
+        });
+
+        if (!ctx) {
+            throw Error("Canvas 생성 실패");
         }
 
         ctx.fillStyle = "#FFFFFF";
         ctx.fillRect(0, 0, width, height);
 
-        ctx.drawImage(source, 0, 0, width, height);
+        ctx.drawImage(
+            source,
+            0,
+            0,
+            width,
+            height
+        );
 
-        const blob = await new Promise((resolve, reject) => {
-            canvas.toBlob(
-                b => b
-                    ? resolve(b)
-                    : reject(Error("JPEG 압축 실패")),
-                "image/jpeg",
-                QUALITY
-            );
-        });
-
-        if (blob.type !== "image/jpeg") {
-            throw Error("JPEG 인코딩을 지원하지 않습니다");
-        }
+        const blob = await canvasToJPEG(canvas);
 
         return {
             blob,
             width,
-            height,
-            mime
+            height
         };
 
     } finally {
         if (bitmap) bitmap.close();
+
         if (url) URL.revokeObjectURL(url);
 
         if (canvas) {
@@ -390,205 +981,73 @@ async function imageToJpeg(file) {
 }
 
 // ========================================
-// 카메라 및 갤러리 사진 선택
+// 갤러리 선택
 // ========================================
 
-async function choosePhoto(e) {
-    const file = e.target.files && e.target.files[0];
+async function chooseGallery(event) {
+    const file = event.target.files?.[0];
 
     if (!file) return;
+
+    if (photoBusy) return;
 
     clearPhoto();
 
     const token = ++photoToken;
 
     photoBusy = true;
-    $("addButton").disabled = true;
+    updateAddButton();
 
-    $("imageInfo").textContent =
-        `사진 처리 중... (${kb(file.size)}, ` +
-        `${file.type || "형식 미확인"})`;
-
-    let url = null;
+    setImageInfo(
+        `갤러리 사진 처리 중... ${formatSize(file.size)}`
+    );
 
     try {
-        const result = await imageToJpeg(file);
+        const result = await compressGalleryImage(file);
 
         if (token !== photoToken) return;
 
-        url = URL.createObjectURL(result.blob);
+        showPhoto(
+            result.blob,
+            `갤러리 사진: ${result.width}×` +
+            `${result.height} / ` +
+            `${formatSize(result.blob.size)}`
+        );
 
-        // 압축된 이미지가 정상적으로 열리는지 확인
-        await loadImageURL(url);
-
-        if (token !== photoToken) return;
-
-        const img = $("preview");
-
-        img.src = url;
-        img.style.display = "block";
-
-        $("previewText").style.display = "none";
-
-        revokePreview();
-
-        previewURL = url;
-        url = null;
-
-        photoBlob = result.blob;
-
-        $("imageInfo").textContent =
-            `압축 완료: ${kb(file.size)} → ` +
-            `${kb(result.blob.size)} / ` +
-            `${result.width}×${result.height}`;
-
-    } catch (err) {
-        console.error("사진 처리 실패", err);
+    } catch (error) {
+        console.error("갤러리 오류:", error);
 
         if (token === photoToken) {
-            photoBlob = null;
-
-            $("imageInfo").textContent =
-                `사진 처리 실패: ${err.message}\n` +
-                `원본 형식: ${file.type || "알 수 없음"}`;
+            setImageInfo(
+                "갤러리 이미지 처리 실패: " +
+                error.message,
+                true
+            );
 
             alert(
-                "사진을 표시하지 못했습니다.\n" +
-                err.message + "\n" +
-                "갤럭시 카메라의 고효율 사진(HEIF) " +
-                "설정을 꺼서 다시 촬영해 보세요."
+                "사진을 읽지 못했습니다.\n" +
+                error.message
             );
         }
 
     } finally {
-        if (url) URL.revokeObjectURL(url);
-
         if (token === photoToken) {
             photoBusy = false;
-            $("addButton").disabled = saveBusy;
+            updateAddButton();
         }
     }
 }
 
 // ========================================
-// 사진 URL 변환
+// 내역 등록
 // ========================================
 
-function photoURL(p) {
-    if (p instanceof Blob) {
-        return {
-            url: URL.createObjectURL(p),
-            revoke: true
-        };
-    }
+async function addRecord(event) {
+    event.preventDefault();
 
-    if (
-        typeof p === "string" &&
-        p.startsWith("data:image/")
-    ) {
-        return {
-            url: p,
-            revoke: false
-        };
-    }
+    if (photoBusy || saveBusy) return;
 
-    return null;
-}
-
-// ========================================
-// 히스토리 표시
-// ========================================
-
-async function renderHistory() {
-    const list = $("historyList");
-
-    list.replaceChildren();
-
-    historyURLs.forEach(u => URL.revokeObjectURL(u));
-    historyURLs = [];
-
-    const all = (await records()).sort(
-        (a, b) => b.id - a.id
-    );
-
-    if (!all.length) {
-        list.textContent = "등록된 내역이 없습니다.";
-        return;
-    }
-
-    for (const r of all) {
-        const div = document.createElement("div");
-
-        div.className =
-            "entry d-flex justify-content-between " +
-            "align-items-start gap-2";
-
-        const left = document.createElement("div");
-        left.style.minWidth = "0";
-
-        const title = document.createElement("b");
-        title.textContent = `${r.user} (${r.date})`;
-
-        left.append(title);
-
-        for (const line of [
-            `내역: ${r.desc}`,
-            `프로젝트: ${r.pro}`
-        ]) {
-            const p = document.createElement("div");
-            p.textContent = line;
-            left.append(p);
-        }
-
-        const ph = photoURL(r.photo);
-
-        if (ph) {
-            const img = document.createElement("img");
-
-            img.loading = "lazy";
-            img.src = ph.url;
-            img.alt = "영수증";
-
-            left.append(img);
-
-            if (ph.revoke) {
-                historyURLs.push(ph.url);
-            }
-        }
-
-        const btn = document.createElement("button");
-
-        btn.className = "btn btn-sm btn-danger";
-        btn.textContent = "삭제";
-
-        btn.onclick = async () => {
-            if (!confirm("정말 삭제하시겠습니까?")) {
-                return;
-            }
-
-            await dbOp(
-                "readwrite",
-                s => s.delete(r.id)
-            );
-
-            await renderHistory();
-        };
-
-        div.append(left, btn);
-        list.append(div);
-    }
-}
-
-// ========================================
-// 내역 추가
-// ========================================
-
-async function addRecord(e) {
-    e.preventDefault();
-
-    if (saveBusy || photoBusy) return;
-
-    const user = $("user").value;
+    const user = $("user").value.trim();
     const desc = $("desc").value.trim();
     const pro = $("pro").value.trim();
     const date = $("date").value;
@@ -599,32 +1058,177 @@ async function addRecord(e) {
     }
 
     saveBusy = true;
-    $("addButton").disabled = true;
+    updateAddButton();
 
     try {
-        await dbOp("readwrite", s => s.add({
+        const record = {
             user,
             desc,
             pro,
             date,
             photo: photoBlob || ""
-        }));
+        };
 
-        localStorage.setItem("selectedUser", user);
-        localStorage.setItem("wdesc", desc);
-        localStorage.setItem("wpro", pro);
+        await addDB(record);
+
+        localStorage.setItem(
+            "selectedUser",
+            user
+        );
+
+        localStorage.setItem(
+            "wdesc",
+            desc
+        );
+
+        localStorage.setItem(
+            "wpro",
+            pro
+        );
 
         clearPhoto();
 
         await renderHistory();
 
-    } catch (err) {
-        console.error(err);
-        alert("저장 실패: " + err.message);
+        alert("내역이 등록되었습니다.");
+
+    } catch (error) {
+        console.error("저장 오류:", error);
+
+        alert(
+            "내역 저장 실패\n" +
+            error.message
+        );
 
     } finally {
         saveBusy = false;
-        $("addButton").disabled = photoBusy;
+        updateAddButton();
+    }
+}
+
+// ========================================
+// 기존 Base64 호환
+// ========================================
+
+function getPhotoURL(photo) {
+    if (!photo) return null;
+
+    if (photo instanceof Blob) {
+        return {
+            url: URL.createObjectURL(photo),
+            temporary: true
+        };
+    }
+
+    if (
+        typeof photo === "string" &&
+        photo.startsWith("data:image/")
+    ) {
+        return {
+            url: photo,
+            temporary: false
+        };
+    }
+
+    return null;
+}
+
+// ========================================
+// 히스토리
+// ========================================
+
+async function renderHistory() {
+    const list = $("historyList");
+
+    list.replaceChildren();
+
+    historyURLs.forEach(url => {
+        URL.revokeObjectURL(url);
+    });
+
+    historyURLs = [];
+
+    const all = await getRecords();
+
+    all.sort((a, b) => b.id - a.id);
+
+    if (!all.length) {
+        const empty = document.createElement("p");
+
+        empty.className =
+            "text-center text-muted";
+
+        empty.textContent =
+            "등록된 내역이 없습니다.";
+
+        list.append(empty);
+        return;
+    }
+
+    for (const record of all) {
+        const card = document.createElement("div");
+
+        card.className =
+            "entry d-flex justify-content-between " +
+            "align-items-start gap-2";
+
+        const content = document.createElement("div");
+        content.style.minWidth = "0";
+
+        const title = document.createElement("strong");
+
+        title.textContent =
+            `${record.user} (${record.date})`;
+
+        content.append(title);
+
+        const desc = document.createElement("div");
+        desc.textContent =
+            `내역: ${record.desc}`;
+
+        const pro = document.createElement("div");
+        pro.textContent =
+            `프로젝트: ${record.pro}`;
+
+        content.append(desc, pro);
+
+        const photo = getPhotoURL(record.photo);
+
+        if (photo) {
+            const img = document.createElement("img");
+
+            img.src = photo.url;
+            img.loading = "lazy";
+            img.alt = "영수증";
+
+            content.append(img);
+
+            if (photo.temporary) {
+                historyURLs.push(photo.url);
+            }
+        }
+
+        const del = document.createElement("button");
+
+        del.type = "button";
+        del.className = "btn btn-sm btn-danger";
+        del.textContent = "삭제";
+
+        del.onclick = async () => {
+            if (!confirm("정말 삭제하시겠습니까?")) {
+                return;
+            }
+
+            try {
+                await deleteDB(record.id);
+                await renderHistory();
+            } catch (error) {
+                alert("삭제 실패: " + error.message);
+            }
+        };
+
+        card.append(content, del);
+        list.append(card);
     }
 }
 
@@ -632,28 +1236,32 @@ async function addRecord(e) {
 // CSV
 // ========================================
 
-function csvEscape(s) {
+function escapeCSV(value) {
     return '"' +
-        String(s ?? "").replace(/"/g, '""') +
+        String(value ?? "").replace(/"/g, '""') +
         '"';
 }
 
-function csvFile(rows) {
-    const content =
-        "No.,날짜,사용자,프로젝트,내역\r\n" +
-        rows.map((r, i) =>
+function createCSV(all) {
+    const lines = [
+        "No.,날짜,사용자,프로젝트,내역"
+    ];
+
+    all.forEach((r, i) => {
+        lines.push(
             [
                 i + 1,
                 r.date,
                 r.user,
                 r.pro,
                 r.desc
-            ].map(csvEscape).join(",")
-        ).join("\r\n");
+            ].map(escapeCSV).join(",")
+        );
+    });
 
     return new File(
-        ["\ufeff" + content],
-        `법인카드내역_${day()}.csv`,
+        ["\uFEFF" + lines.join("\r\n")],
+        `법인카드내역_${today()}.csv`,
         { type: "text/csv;charset=utf-8" }
     );
 }
@@ -662,11 +1270,12 @@ function csvFile(rows) {
 // 파일 다운로드
 // ========================================
 
-function download(file) {
-    const u = URL.createObjectURL(file);
+function downloadFile(file) {
+    const url = URL.createObjectURL(file);
+
     const a = document.createElement("a");
 
-    a.href = u;
+    a.href = url;
     a.download = file.name;
 
     document.body.append(a);
@@ -674,229 +1283,270 @@ function download(file) {
     a.remove();
 
     setTimeout(() => {
-        URL.revokeObjectURL(u);
+        URL.revokeObjectURL(url);
     }, 60000);
 }
 
 // ========================================
-// Base64 변환
+// Base64 → Blob
 // ========================================
 
-function base64Blob(s) {
-    const [header, data] = s.split(",");
+function dataURLToBlob(dataURL) {
+    const parts = dataURL.split(",");
 
     const mime =
-        (header.match(/data:([^;]+)/) || [])[1] ||
+        (parts[0].match(/data:([^;]+)/) || [])[1] ||
         "image/jpeg";
 
-    const binary = atob(data);
+    const binary = atob(parts[1]);
+
     const bytes = new Uint8Array(binary.length);
 
     for (let i = 0; i < binary.length; i++) {
         bytes[i] = binary.charCodeAt(i);
     }
 
-    return new Blob([bytes], { type: mime });
+    return new Blob(
+        [bytes],
+        { type: mime }
+    );
 }
 
-function blobDataURL(blob) {
+// ========================================
+// Blob → Data URL
+// ========================================
+
+function blobToDataURL(blob) {
     return new Promise((resolve, reject) => {
-        const r = new FileReader();
+        const reader = new FileReader();
 
-        r.onload = () => resolve(r.result);
-        r.onerror = () => reject(r.error);
+        reader.onload = () => {
+            resolve(reader.result);
+        };
 
-        r.readAsDataURL(blob);
+        reader.onerror = () => {
+            reject(reader.error);
+        };
+
+        reader.readAsDataURL(blob);
     });
 }
 
 // ========================================
-// PDF용 한글 텍스트 이미지
+// PDF 한글 텍스트
 // ========================================
 
-function textImage(lines) {
-    const c = document.createElement("canvas");
+function makeTextImage(lines) {
+    const canvas = document.createElement("canvas");
 
-    const w = 800;
-    const p = 25;
-    const lh = 38;
+    const width = 800;
+    const padding = 25;
+    const lineHeight = 38;
 
-    c.width = w;
+    canvas.width = width;
 
-    const ctx = c.getContext("2d");
-    ctx.font = "26px sans-serif";
+    const measure = canvas.getContext("2d");
+
+    measure.font = "26px sans-serif";
 
     const wrapped = [];
 
     for (const line of lines) {
         let current = "";
 
-        for (const ch of line) {
+        for (const char of line) {
             if (
                 current &&
-                ctx.measureText(current + ch).width >
-                w - p * 2
+                measure.measureText(
+                    current + char
+                ).width > width - padding * 2
             ) {
                 wrapped.push(current);
-                current = ch;
+                current = char;
             } else {
-                current += ch;
+                current += char;
             }
         }
 
         wrapped.push(current);
     }
 
-    c.height = p * 2 + wrapped.length * lh;
+    canvas.height =
+        padding * 2 +
+        wrapped.length * lineHeight;
 
-    const x = c.getContext("2d");
+    const ctx = canvas.getContext("2d");
 
-    x.fillStyle = "#fff";
-    x.fillRect(0, 0, c.width, c.height);
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fillRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
 
-    x.fillStyle = "#000";
-    x.font = "26px sans-serif";
-    x.textBaseline = "top";
+    ctx.fillStyle = "#000000";
+    ctx.font = "26px sans-serif";
+    ctx.textBaseline = "top";
 
-    wrapped.forEach((s, i) => {
-        x.fillText(s, p, p + i * lh);
+    wrapped.forEach((line, index) => {
+        ctx.fillText(
+            line,
+            padding,
+            padding + index * lineHeight
+        );
     });
 
-    const out = {
-        data: c.toDataURL("image/png"),
-        ratio: c.height / c.width
+    const result = {
+        data: canvas.toDataURL("image/png"),
+        ratio: canvas.height / canvas.width
     };
 
-    c.width = 0;
-    c.height = 0;
+    canvas.width = 0;
+    canvas.height = 0;
 
-    return out;
+    return result;
 }
 
 // ========================================
-// PDF 생성 및 공유
+// PDF 생성
 // ========================================
 
 async function sharePDF() {
-    const btn = $("shareButton");
-    btn.disabled = true;
+    const button = $("shareButton");
+
+    button.disabled = true;
 
     try {
-        const all = await records();
+        const all = await getRecords();
 
         if (!all.length) {
-            alert("저장된 내역이 없습니다.");
+            alert("등록된 내역이 없습니다.");
             return;
         }
 
         if (!window.jspdf) {
             throw Error(
-                "PDF 라이브러리를 불러오지 못했습니다"
+                "PDF 라이브러리를 불러오지 못했습니다."
             );
         }
 
         const { jsPDF } = window.jspdf;
 
-        const doc = new jsPDF({
+        const pdf = new jsPDF({
             unit: "mm",
             format: "a4",
             compress: true
         });
 
-        const W = doc.internal.pageSize.getWidth();
-        const H = doc.internal.pageSize.getHeight();
+        const pageW =
+            pdf.internal.pageSize.getWidth();
+
+        const pageH =
+            pdf.internal.pageSize.getHeight();
 
         const margin = 10;
-        const photoW = 65;
+        const imageW = 65;
         const textX = 80;
-        const textW = W - textX - margin;
+        const textW = pageW - textX - margin;
 
         let y = margin;
 
         for (let i = 0; i < all.length; i++) {
-            btn.textContent =
+            const record = all[i];
+
+            button.textContent =
                 `PDF 생성 ${i + 1}/${all.length}`;
 
-            const r = all[i];
-
-            const txt = textImage([
-                `사용자: ${r.user}`,
-                `날짜: ${r.date}`,
-                `프로젝트: ${r.pro}`,
-                `내역: ${r.desc}`
+            const text = makeTextImage([
+                `사용자: ${record.user}`,
+                `날짜: ${record.date}`,
+                `프로젝트: ${record.pro}`,
+                `내역: ${record.desc}`
             ]);
 
-            let data = null;
+            let imageData = null;
             let iw = 0;
             let ih = 0;
 
-            if (r.photo) {
+            if (record.photo) {
                 try {
-                    const raw = r.photo instanceof Blob
-                        ? r.photo
-                        : base64Blob(r.photo);
+                    const source =
+                        record.photo instanceof Blob
+                            ? record.photo
+                            : dataURLToBlob(record.photo);
 
-                    const out = await imageToJpeg(raw);
+                    const compressed =
+                        await compressGalleryImage(source);
 
-                    data = await blobDataURL(out.blob);
+                    imageData =
+                        await blobToDataURL(compressed.blob);
 
-                    iw = photoW;
-                    ih = photoW * out.height / out.width;
+                    iw = imageW;
 
-                } catch (err) {
-                    console.warn("사진 제외:", err);
+                    ih = imageW *
+                        compressed.height /
+                        compressed.width;
+
+                } catch (error) {
+                    console.warn(
+                        "PDF 이미지 처리 실패:",
+                        error
+                    );
                 }
             }
 
-            const th = textW * txt.ratio;
+            const textH = textW * text.ratio;
 
-            const factor = Math.min(
+            const scale = Math.min(
                 1,
-                (H - 2 * margin) /
-                Math.max(th, ih, 1)
+                (pageH - margin * 2) /
+                Math.max(textH, ih, 1)
             );
 
-            const rowH = Math.max(th, ih) * factor;
+            const rowH =
+                Math.max(textH, ih) * scale;
 
-            if (y + rowH > H - margin) {
-                doc.addPage();
+            if (
+                y + rowH > pageH - margin &&
+                y > margin
+            ) {
+                pdf.addPage();
                 y = margin;
             }
 
-            if (data) {
-                doc.addImage(
-                    data,
+            if (imageData) {
+                pdf.addImage(
+                    imageData,
                     "JPEG",
                     margin,
                     y,
-                    iw * factor,
-                    ih * factor,
+                    iw * scale,
+                    ih * scale,
                     undefined,
                     "FAST"
                 );
             }
 
-            doc.addImage(
-                txt.data,
+            pdf.addImage(
+                text.data,
                 "PNG",
                 textX,
                 y,
-                textW * factor,
-                th * factor,
+                textW * scale,
+                textH * scale,
                 undefined,
                 "FAST"
             );
 
             y += rowH + 6;
 
-            await new Promise(resolve =>
-                setTimeout(resolve, 0)
-            );
+            await sleep(0);
         }
 
         const file = new File(
-            [doc.output("blob")],
-            `법인카드사진_${day()}.pdf`,
+            [pdf.output("blob")],
+            `법인카드사진_${today()}.pdf`,
             { type: "application/pdf" }
         );
 
@@ -908,27 +1558,30 @@ async function sharePDF() {
                 await navigator.share({
                     files: [file],
                     title: "법인카드 내역",
-                    text: `법인카드 내역 공유 (${day()})`
+                    text: `법인카드 내역 (${today()})`
                 });
 
-            } catch (err) {
-                if (err.name !== "AbortError") {
-                    console.error(err);
-                    download(file);
+            } catch (error) {
+                if (error.name !== "AbortError") {
+                    console.error(error);
+                    downloadFile(file);
                 }
             }
-
         } else {
-            download(file);
+            downloadFile(file);
         }
 
-    } catch (err) {
-        console.error(err);
-        alert("PDF 생성 실패: " + err.message);
+    } catch (error) {
+        console.error("PDF 오류:", error);
+
+        alert(
+            "PDF 생성 실패\n" +
+            error.message
+        );
 
     } finally {
-        btn.disabled = false;
-        btn.textContent = "공유하기 (PDF)";
+        button.disabled = false;
+        button.textContent = "공유하기 (PDF)";
     }
 }
 
@@ -936,7 +1589,7 @@ async function sharePDF() {
 // 초기화
 // ========================================
 
-async function init() {
+async function initialize() {
     try {
         await openDB();
 
@@ -949,72 +1602,148 @@ async function init() {
         $("pro").value =
             localStorage.getItem("wpro") || "";
 
-        $("date").value = day();
+        $("date").value = today();
 
-        $("user").onchange = () => {
-            localStorage.setItem(
-                "selectedUser",
-                $("user").value
-            );
-        };
+        $("user").addEventListener(
+            "change",
+            () => {
+                localStorage.setItem(
+                    "selectedUser",
+                    $("user").value
+                );
+            }
+        );
 
-        $("photoButton").onclick = () => {
-            if (photoBusy) return;
+        // 웹 카메라 실행
+        $("openCameraButton").addEventListener(
+            "click",
+            openCamera
+        );
 
-            const camera = confirm(
-                "사진을 직접 촬영하시겠습니까?\n" +
-                "확인: 카메라 / 취소: 갤러리"
-            );
+        // 웹 카메라 종료
+        $("closeCameraButton").addEventListener(
+            "click",
+            closeCamera
+        );
 
-            if (camera) {
-                $("cameraInput").value = "";
-                $("cameraInput").click();
-            } else {
+        // 웹 카메라 촬영
+        $("captureButton").addEventListener(
+            "click",
+            capturePhoto
+        );
+
+        // 갤러리 선택
+        $("galleryButton").addEventListener(
+            "click",
+            () => {
                 $("galleryInput").value = "";
                 $("galleryInput").click();
             }
-        };
+        );
 
-        $("cameraInput").onchange = choosePhoto;
-        $("galleryInput").onchange = choosePhoto;
+        $("galleryInput").addEventListener(
+            "change",
+            chooseGallery
+        );
 
-        $("cardForm").onsubmit = addRecord;
+        // 사진 제거
+        $("removePhotoButton").addEventListener(
+            "click",
+            clearPhoto
+        );
 
-        $("shareButton").onclick = sharePDF;
+        // 내역 추가
+        $("cardForm").addEventListener(
+            "submit",
+            addRecord
+        );
 
-        $("csvButton").onclick = async () => {
-            const all = await records();
+        // PDF 공유
+        $("shareButton").addEventListener(
+            "click",
+            sharePDF
+        );
 
-            if (!all.length) {
-                alert("저장된 내역이 없습니다.");
-                return;
+        // CSV 다운로드
+        $("csvButton").addEventListener(
+            "click",
+            async () => {
+                try {
+                    const all = await getRecords();
+
+                    if (!all.length) {
+                        alert("등록된 내역이 없습니다.");
+                        return;
+                    }
+
+                    downloadFile(createCSV(all));
+
+                } catch (error) {
+                    alert(
+                        "CSV 다운로드 실패\n" +
+                        error.message
+                    );
+                }
             }
+        );
 
-            download(csvFile(all));
-        };
+        // 전체 삭제
+        $("clearButton").addEventListener(
+            "click",
+            async () => {
+                if (!confirm(
+                    "모든 내역을 삭제하시겠습니까?"
+                )) {
+                    return;
+                }
 
-        $("clearButton").onclick = async () => {
-            if (!confirm("모든 내역을 삭제하시겠습니까?")) {
-                return;
+                try {
+                    await clearDB();
+                    await renderHistory();
+
+                } catch (error) {
+                    alert(
+                        "초기화 실패\n" +
+                        error.message
+                    );
+                }
             }
+        );
 
-            await dbOp(
-                "readwrite",
-                s => s.clear()
-            );
+        // 페이지 이동 시 카메라 종료
+        window.addEventListener(
+            "pagehide",
+            closeCamera
+        );
 
-            await renderHistory();
-        };
+        document.addEventListener(
+            "visibilitychange",
+            () => {
+                if (document.hidden && cameraStream) {
+                    closeCamera();
+                }
+            }
+        );
 
         await renderHistory();
 
-    } catch (err) {
-        console.error(err);
-        alert("초기화 실패: " + err.message);
+        console.log(
+            "법인카드 내역 v2.3 초기화 완료"
+        );
+
+    } catch (error) {
+        console.error("초기화 오류:", error);
+
+        alert(
+            "프로그램 초기화 실패\n" +
+            error.message
+        );
     }
 }
 
-init();
+initialize();
+
 </script>
+
 </body>
 </html>
